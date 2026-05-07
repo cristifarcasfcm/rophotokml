@@ -1,0 +1,11 @@
+{
+  "appId": "ro.rophotokml.app",
+  "appName": "ROPhotoKml",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": true,
+    "webContentsDebuggingEnabled": false,
+    "captureInput": true,
+    "backgroundColor": "#0d1a0d"
+  }
+}
