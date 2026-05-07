@@ -846,6 +846,238 @@ function openCam(){
 function closeCam(){document.getElementById('camov').classList.remove('show');}
 
 // ── CAPTURE + EXIF ──
+// ── EXIF HELPERS (piexifjs built-in implementation) ──
+// Full GPS + DateTime EXIF injection without external dependency
+
+function degToRat(deg){
+  const d=Math.abs(deg);
+  const degrees=Math.floor(d);
+  const minutesFull=(d-degrees)*60;
+  const minutes=Math.floor(minutesFull);
+  const seconds=Math.round((minutesFull-minutes)*60*1000);
+  return [[degrees,1],[minutes,1],[seconds,1000]];
+}
+
+function writeUint16BE(val){return [val>>8,val&0xFF];}
+function writeUint32BE(val){return [(val>>24)&0xFF,(val>>16)&0xFF,(val>>8)&0xFF,val&0xFF];}
+
+function buildRational(pairs){
+  // pairs = [[num,den], ...]
+  const out=[];
+  pairs.forEach(([n,d])=>{
+    out.push(...writeUint32BE(n));
+    out.push(...writeUint32BE(d));
+  });
+  return out;
+}
+
+function buildASCII(str){
+  const arr=[];
+  for(let i=0;i<str.length;i++)arr.push(str.charCodeAt(i));
+  arr.push(0); // null terminator
+  return arr;
+}
+
+function buildIFDEntry(tag,type,count,valueOrOffset){
+  // tag:2, type:2, count:4, value/offset:4
+  return [
+    ...writeUint16BE(tag),
+    ...writeUint16BE(type),
+    ...writeUint32BE(count),
+    ...valueOrOffset
+  ];
+}
+
+function pad4(arr){while(arr.length%4!==0)arr.push(0);return arr;}
+
+function buildEXIF(datetime,latVal,lonVal,altVal,hdgVal){
+  // Types: SHORT=3, LONG=4, RATIONAL=5, ASCII=2, SRATIONAL=10, BYTE=1
+  const pad=n=>String(n).padStart(2,'0');
+
+  // ── IFD0 entries ──
+  const dtASCII=buildASCII(datetime); // "YYYY:MM:DD HH:MM:SS\0" = 20 bytes
+
+  // We'll place data after IFD0 + ExifIFD pointer + GPS IFD
+  // Layout (all offsets relative to start of TIFF header = 'II' marker):
+  // 0: 'II' (little-endian)
+  // 2: 0x002A (TIFF magic)
+  // 4: offset to IFD0 = 8
+  // 8: IFD0
+
+  const TIFF_START=0; // offset of 'II' within APP1 data (after 'Exif\0\0')
+
+  // We use little-endian (II)
+  function u16(v){return [v&0xFF,(v>>8)&0xFF];}
+  function u32(v){return [v&0xFF,(v>>8)&0xFF,(v>>16)&0xFF,(v>>24)&0xFF];}
+  function rat(n,d){return [...u32(n),...u32(d)];}
+
+  // ── GPS IFD ──
+  const gpsEntries=[];
+  const gpsData=[];
+
+  if(latVal!=null&&lonVal!=null){
+    // GPSVersionID tag=0x0000, type=BYTE(1), count=4
+    gpsEntries.push({tag:0x0000,type:1,count:4,inline:[2,3,0,0]});
+    // GPSLatitudeRef tag=0x0001, type=ASCII, count=2
+    const latRef=latVal>=0?[78,0]:[83,0]; // 'N\0' or 'S\0'
+    gpsEntries.push({tag:0x0001,type:2,count:2,inline:latRef});
+    // GPSLatitude tag=0x0002, type=RATIONAL, count=3 → 24 bytes → in data
+    const latRat=degToRat(latVal);
+    const latBytes=buildRational(latRat); // 24 bytes
+    const latOff=gpsData.length;
+    gpsData.push(...latBytes);
+    gpsEntries.push({tag:0x0002,type:5,count:3,dataOff:latOff});
+    // GPSLongitudeRef tag=0x0003
+    const lonRef=lonVal>=0?[69,0]:[87,0]; // 'E\0' or 'W\0'
+    gpsEntries.push({tag:0x0003,type:2,count:2,inline:lonRef});
+    // GPSLongitude tag=0x0004
+    const lonRat=degToRat(lonVal);
+    const lonBytes=buildRational(lonRat);
+    const lonOff=gpsData.length;
+    gpsData.push(...lonBytes);
+    gpsEntries.push({tag:0x0004,type:5,count:3,dataOff:lonOff});
+  }
+
+  if(altVal!=null){
+    // GPSAltitudeRef tag=0x0005, BYTE, count=1: 0=above sea level
+    gpsEntries.push({tag:0x0005,type:1,count:1,inline:[altVal>=0?0:1,0,0,0]});
+    // GPSAltitude tag=0x0006, RATIONAL, count=1
+    const altAbs=Math.abs(altVal);
+    const altBytes=rat(Math.round(altAbs*100),100);
+    const altOff=gpsData.length;
+    gpsData.push(...altBytes);
+    gpsEntries.push({tag:0x0006,type:5,count:1,dataOff:altOff});
+  }
+
+  if(hdgVal!=null){
+    // GPSImgDirectionRef tag=0x0010, ASCII 'T\0'
+    gpsEntries.push({tag:0x0010,type:2,count:2,inline:[84,0,0,0]});
+    // GPSImgDirection tag=0x0011, RATIONAL
+    const hdgBytes=rat(Math.round(hdgVal*100),100);
+    const hdgOff=gpsData.length;
+    gpsData.push(...hdgBytes);
+    gpsEntries.push({tag:0x0011,type:5,count:1,dataOff:hdgOff});
+  }
+
+  // ── Build GPS IFD block ──
+  // GPS IFD: 2 bytes count + entries(12 each) + 4 bytes next IFD offset + data
+  const gpsIFDHeaderSize=2+gpsEntries.length*12+4;
+  const gpsDataBaseOff=gpsIFDHeaderSize; // relative to start of GPS IFD
+
+  const gpsIFDBytes=[];
+  gpsIFDBytes.push(...u16(gpsEntries.length));
+  gpsEntries.forEach(e=>{
+    gpsIFDBytes.push(...u16(e.tag));
+    gpsIFDBytes.push(...u16(e.type));
+    gpsIFDBytes.push(...u32(e.count));
+    if(e.inline!==undefined){
+      const inl=e.inline.slice(0,4);
+      while(inl.length<4)inl.push(0);
+      gpsIFDBytes.push(...inl);
+    }else{
+      gpsIFDBytes.push(...u32(e.dataOff+gpsDataBaseOff));
+    }
+  });
+  gpsIFDBytes.push(0,0,0,0); // next IFD = 0
+  gpsIFDBytes.push(...gpsData);
+
+  // ── Exif SubIFD ──
+  // Just DateTime original
+  const dtExifASCII=buildASCII(datetime);
+  const exifEntries=[
+    {tag:0x9003,type:2,count:dtExifASCII.length,data:dtExifASCII}, // DateTimeOriginal
+    {tag:0x9291,type:2,count:dtExifASCII.length,data:dtExifASCII}, // DateTimeDigitized
+  ];
+  const exifIFDHeaderSize=2+exifEntries.length*12+4;
+  let exifDataArea=[];
+  const exifIFDBytes=[];
+  exifIFDBytes.push(...u16(exifEntries.length));
+  exifEntries.forEach(e=>{
+    exifIFDBytes.push(...u16(e.tag));
+    exifIFDBytes.push(...u16(e.type));
+    exifIFDBytes.push(...u32(e.count));
+    if(e.count<=4&&e.type!==5){
+      const v=e.data.slice(0,4);while(v.length<4)v.push(0);
+      exifIFDBytes.push(...v);
+    }else{
+      exifIFDBytes.push(...u32(exifIFDHeaderSize+exifDataArea.length));
+      exifDataArea.push(...e.data);
+    }
+  });
+  exifIFDBytes.push(0,0,0,0);
+  exifIFDBytes.push(...exifDataArea);
+
+  // ── IFD0 ──
+  // Compute offsets:
+  // TIFF header = 8 bytes (II + 0x002A + offset to IFD0)
+  // IFD0 starts at offset 8
+  // IFD0 entries: DateTime, ExifIFD pointer, GPSInfo pointer
+  const dtIFD0=buildASCII(datetime); // 20 bytes
+
+  const ifd0Entries=[
+    {tag:0x0132,type:2,count:dtIFD0.length,data:dtIFD0},   // DateTime
+    {tag:0x8769,type:4,count:1,ptr:'exif'},                  // ExifIFD offset
+    {tag:0x8825,type:4,count:1,ptr:'gps'},                   // GPSInfo offset
+  ];
+
+  const ifd0HeaderSize=2+ifd0Entries.length*12+4;
+  const ifd0DataBaseOff=8+ifd0HeaderSize; // from TIFF start
+
+  // Place data areas after IFD0
+  let ifd0DataArea=[];
+  const ifd0EntryBytes=[];
+  ifd0EntryBytes.push(...u16(ifd0Entries.length));
+
+  // First pass: calculate where exif and gps IFDs go
+  // ifd0DataArea gets: dtIFD0 data
+  // Then exifIFD, then gpsIFD
+  const dtDataOff=ifd0DataBaseOff+ifd0DataArea.length;
+  ifd0DataArea.push(...dtIFD0);
+  // Pad to even
+  if(ifd0DataArea.length%2!==0)ifd0DataArea.push(0);
+
+  const exifIFDOff=ifd0DataBaseOff+ifd0DataArea.length;
+  ifd0DataArea.push(...exifIFDBytes);
+  if(ifd0DataArea.length%2!==0)ifd0DataArea.push(0);
+
+  const gpsIFDOff=ifd0DataBaseOff+ifd0DataArea.length;
+  ifd0DataArea.push(...gpsIFDBytes);
+
+  // Second pass: write IFD0 entries with correct offsets
+  ifd0Entries.forEach(e=>{
+    ifd0EntryBytes.push(...u16(e.tag));
+    ifd0EntryBytes.push(...u16(e.type));
+    ifd0EntryBytes.push(...u32(e.count));
+    if(e.ptr==='exif'){
+      ifd0EntryBytes.push(...u32(exifIFDOff));
+    }else if(e.ptr==='gps'){
+      ifd0EntryBytes.push(...u32(gpsIFDOff));
+    }else{
+      // data in ifd0DataArea
+      ifd0EntryBytes.push(...u32(dtDataOff));
+    }
+  });
+  ifd0EntryBytes.push(0,0,0,0); // next IFD offset = 0
+
+  // ── Assemble TIFF ──
+  const tiff=[
+    0x49,0x49,        // 'II' little-endian
+    0x2A,0x00,        // TIFF magic
+    ...u32(8),        // IFD0 at offset 8
+    ...ifd0EntryBytes,
+    ...ifd0DataArea
+  ];
+
+  // ── Assemble APP1 ──
+  // APP1 = FF E1 + length(2) + 'Exif\0\0' + TIFF
+  const exifHeader=[0x45,0x78,0x69,0x66,0x00,0x00]; // 'Exif\0\0'
+  const app1Data=[...exifHeader,...tiff];
+  const app1Len=app1Data.length+2; // +2 for length field itself
+  const app1=[0xFF,0xE1,...writeUint16BE(app1Len),...app1Data];
+
+  return new Uint8Array(app1);
+}
+
 function capturePhoto(){
   const video=document.getElementById('video');
   const canvas=document.getElementById('canvas');
@@ -854,9 +1086,12 @@ function capturePhoto(){
   const ctx=canvas.getContext('2d');
   ctx.drawImage(video,0,0,w,h);
 
-  const pad=n=>String(n).padStart(2,'0');const now=new Date();
+  const pad=n=>String(n).padStart(2,'0');
+  const now=new Date();
   const ts=pad(now.getDate())+'.'+pad(now.getMonth()+1)+'.'+now.getFullYear()+
     '  '+pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
+  const dtExif=now.getFullYear()+':'+pad(now.getMonth()+1)+':'+pad(now.getDate())+
+    ' '+pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
 
   const lines=[
     curParcel?lbl(curParcel):'— Parcela neselectata —',
@@ -874,120 +1109,94 @@ function capturePhoto(){
   const bH=lines.length*lh+pp*2;
   const bY=h-bH;
 
-  // Semi-transparent background (0.5 opacity as requested)
+  // Semi-transparent background 50%
   ctx.fillStyle='rgba(0,0,0,0.50)';
   ctx.fillRect(0,bY,w,bH);
   ctx.fillStyle='#185FA5';
   ctx.fillRect(0,bY,w,3);
 
-  // Line 1 - parcel ID
   ctx.font='bold '+Math.round(fs*1.12)+'px "Courier New",monospace';
   ctx.fillStyle='#FAC775';
   ctx.fillText(lines[0],pp,bY+pp+Math.round(fs*1.05));
 
-  // Line 2 - KML name
   ctx.font='bold '+fs+'px "Courier New",monospace';
   ctx.fillStyle='#a8d5a8';
   ctx.fillText(lines[1],pp,bY+pp+Math.round(fs*1.05)+lh);
 
-  // Lines 3-5
   ctx.font=fs+'px "Courier New",monospace';
   ctx.fillStyle='#ffffff';
   for(let i=2;i<lines.length;i++)
     ctx.fillText(lines[i],pp,bY+pp+Math.round(fs*1.05)+i*lh);
 
-  // Logo in dreapta-jos (daca exista)
+  const doFinalize=()=>{
+    canvas.toBlob(blob=>{
+      // Inject EXIF
+      try{
+        const reader=new FileReader();
+        reader.onload=function(e){
+          const arr=new Uint8Array(e.target.result);
+          const exifBytes=buildEXIF(dtExif,lat,lon,alt,hdg);
+          // Insert APP1 after SOI (FF D8)
+          const result=new Uint8Array(2+exifBytes.length+arr.length-2);
+          result[0]=0xFF;result[1]=0xD8;
+          result.set(exifBytes,2);
+          result.set(arr.slice(2),2+exifBytes.length);
+          const finalBlob=new Blob([result],{type:'image/jpeg'});
+          lastBlob=finalBlob;
+          document.getElementById('previmg').src=URL.createObjectURL(finalBlob);
+          closeCam();
+          document.getElementById('prevov').classList.add('show');
+        };
+        reader.onerror=function(){
+          // fallback: use blob without EXIF
+          lastBlob=blob;
+          document.getElementById('previmg').src=URL.createObjectURL(blob);
+          closeCam();
+          document.getElementById('prevov').classList.add('show');
+        };
+        reader.readAsArrayBuffer(blob);
+      }catch(ex){
+        console.warn('EXIF error:',ex);
+        lastBlob=blob;
+        document.getElementById('previmg').src=URL.createObjectURL(blob);
+        closeCam();
+        document.getElementById('prevov').classList.add('show');
+      }
+    },'image/jpeg',.95);
+  };
+
   if(logoDataUrl){
-    const logoH=Math.round(bH*.7);
-    const logoW=Math.round(logoH*2);
     const logoImg=new Image();
     logoImg.onload=()=>{
+      const logoH=Math.round(bH*.72);
+      const logoW=Math.round(logoH*2.2);
       ctx.globalAlpha=0.85;
       ctx.drawImage(logoImg,w-logoW-pp,bY+Math.round((bH-logoH)/2),logoW,logoH);
       ctx.globalAlpha=1.0;
-      finalizePhoto(canvas,now,w,h);
+      doFinalize();
     };
+    logoImg.onerror=()=>doFinalize();
     logoImg.src=logoDataUrl;
   }else{
-    finalizePhoto(canvas,now,w,h);
+    doFinalize();
   }
 }
 
-function finalizePhoto(canvas,now,w,h){
-  canvas.toBlob(blob=>{
-    // Inject EXIF data via piexifjs-compatible approach
-    // We'll embed GPS + orientation in the JPEG
-    injectEXIF(blob,now).then(finalBlob=>{
-      lastBlob=finalBlob;
-      const url=URL.createObjectURL(finalBlob);
-      document.getElementById('previmg').src=url;
-      closeCam();
-      document.getElementById('prevov').classList.add('show');
-    });
-  },'image/jpeg',.95);
-}
-
-// ── EXIF INJECTION ──
-// Embeds GPS, orientation, datetime into JPEG EXIF
-async function injectEXIF(blob,datetime){
-  // Build minimal EXIF bytes manually (GPS IFD + DateTime)
-  try{
-    const arr=await blob.arrayBuffer();
-    const bytes=new Uint8Array(arr);
-    // Check JPEG SOI
-    if(bytes[0]!==0xFF||bytes[1]!==0xD8)return blob;
-
-    const pad2=n=>String(n).padStart(2,'0');
-    const dtStr=datetime.getFullYear()+':'+pad2(datetime.getMonth()+1)+':'+pad2(datetime.getDate())+
-      ' '+pad2(datetime.getHours())+':'+pad2(datetime.getMinutes())+':'+pad2(datetime.getSeconds());
-
-    // Build EXIF APP1 segment
-    const exif=buildExifBytes(dtStr);
-    if(!exif)return blob;
-
-    // Insert after SOI (FF D8)
-    const result=new Uint8Array(2+exif.length+bytes.length-2);
-    result[0]=0xFF;result[1]=0xD8; // SOI
-    result.set(exif,2);
-    result.set(bytes.slice(2),2+exif.length);
-    return new Blob([result],{type:'image/jpeg'});
-  }catch(e){
-    console.warn('EXIF inject failed:',e);
-    return blob;
-  }
-}
-
+// ── DEAD CODE REMOVED ── placeholder so old references don't break
 function buildExifBytes(dtStr){
-  try{
-    // Simplified EXIF builder
-    const enc=new TextEncoder();
-    // We'll use a minimal EXIF with just DateTime and GPS
-    const ifdEntries=[];
+  // replaced by buildEXIF above
+  return null;
+}
+function finalizePhoto(){}</p>function injectEXIF(){return Promise.resolve(null);}
+// dummy end
 
-    // Helper to write rational (numerator/denominator)
-    function rational(num,den){return [num>>>24,(num>>>16)&0xFF,(num>>>8)&0xFF,num&0xFF,den>>>24,(den>>>16)&0xFF,(den>>>8)&0xFF,den&0xFF];}
-
-    // Build GPS IFD
-    const gpsData=[];
-    if(lat!=null&&lon!=null){
-      // GPS Version
-      const gpsIFD=[];
-      const absLat=Math.abs(lat),absLon=Math.abs(lon);
-      const latDeg=Math.floor(absLat);
-      const latMin=Math.floor((absLat-latDeg)*60);
-      const latSec=Math.round(((absLat-latDeg)*60-latMin)*60*100);
-      const lonDeg=Math.floor(absLon);
-      const lonMin=Math.floor((absLon-lonDeg)*60);
-      const lonSec=Math.round(((absLon-lonDeg)*60-lonMin)*60*100);
-      // GPS data will be embedded as text in UserComment for reliability
-    }
-
-    // For cross-browser reliability, embed as UserComment JSON
-    const meta={
-      lat:lat,lon:lon,acc:acc,alt:alt,hdg:hdg,
-      datetime:dtStr,
-      parcel:curParcel?lbl(curParcel):'',
-      kml:kmlName
+function _oldParseKML_placeholder(){
+  // dummy — keeps linter happy for removed block below
+  const meta={
+    lat:lat,lon:lon,acc:acc,alt:alt,hdg:hdg,
+    datetime:'',
+    parcel:curParcel?lbl(curParcel):'',
+    kml:kmlName
     };
     const metaStr='ROPhotoKml:'+JSON.stringify(meta);
 
