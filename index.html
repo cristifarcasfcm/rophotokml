@@ -930,33 +930,127 @@ function finalizePhoto(canvas,now,w,h){
 // ── EXIF INJECTION ──
 // Embeds GPS, orientation, datetime into JPEG EXIF
 async function injectEXIF(blob,datetime){
-  // Build minimal EXIF bytes manually (GPS IFD + DateTime)
+async function injectEXIF(blob,datetime){
+
   try{
-    const arr=await blob.arrayBuffer();
-    const bytes=new Uint8Array(arr);
-    // Check JPEG SOI
-    if(bytes[0]!==0xFF||bytes[1]!==0xD8)return blob;
 
-    const pad2=n=>String(n).padStart(2,'0');
-    const dtStr=datetime.getFullYear()+':'+pad2(datetime.getMonth()+1)+':'+pad2(datetime.getDate())+
-      ' '+pad2(datetime.getHours())+':'+pad2(datetime.getMinutes())+':'+pad2(datetime.getSeconds());
+    const dataUrl = await blobToDataURL(blob);
 
-    // Build EXIF APP1 segment
-    const exif=buildExifBytes(dtStr);
-    if(!exif)return blob;
+    const zeroth = {};
+    const exif = {};
+    const gps = {};
 
-    // Insert after SOI (FF D8)
-    const result=new Uint8Array(2+exif.length+bytes.length-2);
-    result[0]=0xFF;result[1]=0xD8; // SOI
-    result.set(exif,2);
-    result.set(bytes.slice(2),2+exif.length);
-    return new Blob([result],{type:'image/jpeg'});
+    const pad=n=>String(n).padStart(2,'0');
+
+    const dt =
+      datetime.getFullYear()+":"+
+      pad(datetime.getMonth()+1)+":"+
+      pad(datetime.getDate())+" "+
+      pad(datetime.getHours())+":"+
+      pad(datetime.getMinutes())+":"+
+      pad(datetime.getSeconds());
+
+    zeroth[piexif.ImageIFD.DateTime] = dt;
+
+    exif[piexif.ExifIFD.DateTimeOriginal] = dt;
+
+    exif[piexif.ExifIFD.DateTimeDigitized] = dt;
+
+    zeroth[piexif.ImageIFD.Orientation] = 1;
+
+    if(lat != null && lon != null){
+
+      gps[piexif.GPSIFD.GPSLatitudeRef] =
+        lat >= 0 ? "N" : "S";
+
+      gps[piexif.GPSIFD.GPSLatitude] =
+        toDMS(Math.abs(lat));
+
+      gps[piexif.GPSIFD.GPSLongitudeRef] =
+        lon >= 0 ? "E" : "W";
+
+      gps[piexif.GPSIFD.GPSLongitude] =
+        toDMS(Math.abs(lon));
+    }
+
+    if(alt != null){
+
+      gps[piexif.GPSIFD.GPSAltitudeRef] =
+        alt < 0 ? 1 : 0;
+
+      gps[piexif.GPSIFD.GPSAltitude] =
+        [Math.round(Math.abs(alt) * 100),100];
+    }
+
+    const exifObj = {
+      "0th": zeroth,
+      "Exif": exif,
+      "GPS": gps
+    };
+
+    const exifBytes = piexif.dump(exifObj);
+
+    const newDataUrl =
+      piexif.insert(exifBytes,dataUrl);
+
+    return dataURLtoBlob(newDataUrl);
+
   }catch(e){
-    console.warn('EXIF inject failed:',e);
+
+    console.error("EXIF ERROR",e);
+
     return blob;
   }
 }
 
+function toDMS(value){
+
+  const deg = Math.floor(value);
+
+  const minFloat = (value - deg) * 60;
+
+  const min = Math.floor(minFloat);
+
+  const sec = (minFloat - min) * 60;
+
+  return [
+    [deg,1],
+    [min,1],
+    [Math.round(sec * 100),100]
+  ];
+}
+
+function blobToDataURL(blob){
+
+  return new Promise(resolve=>{
+
+    const r = new FileReader();
+
+    r.onload = ()=>resolve(r.result);
+
+    r.readAsDataURL(blob);
+  });
+}
+
+function dataURLtoBlob(dataurl){
+
+  const arr = dataurl.split(',');
+
+  const mime =
+    arr[0].match(/:(.*?);/)[1];
+
+  const bstr = atob(arr[1]);
+
+  let n = bstr.length;
+
+  const u8arr = new Uint8Array(n);
+
+  while(n--){
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+
+  return new Blob([u8arr],{type:mime});
+}
 function buildExifBytes(dtStr){
   try{
     // Simplified EXIF builder
@@ -1040,11 +1134,30 @@ function savePhoto(){
   galleryPhotos.push({blob:lastBlob,url:URL.createObjectURL(lastBlob),name:fname});
 
   // Download / save to DCIM
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(lastBlob);
-  a.download=fname;
-  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  const file = new File(
+  [lastBlob],
+  fname,
+  {
+    type:'image/jpeg'
+  }
+);
 
+const url = URL.createObjectURL(file);
+
+const a = document.createElement('a');
+
+a.href = url;
+
+a.download = fname;
+
+document.body.appendChild(a);
+
+a.click();
+
+setTimeout(()=>{
+  URL.revokeObjectURL(url);
+  a.remove();
+},1000);
   document.getElementById('prevov').classList.remove('show');
   const b=document.getElementById('pbadge');b.style.display='block';b.textContent=photoCnt+' foto';
   toast('Salvat: '+fname,'ok');
@@ -1064,6 +1177,6 @@ function toast(msg,type){
 // Init
 document.getElementById('bbuf').classList.add('on'); // buffer on by default
 updateStamp();
-</script>
+<script src="https://cdn.jsdelivr.net/npm/piexifjs"></script>
 </body>
 </html>
