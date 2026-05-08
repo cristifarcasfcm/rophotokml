@@ -345,14 +345,14 @@ input[type=file]{display:none}
 </div>
 <div id="prog"><div class="spin"></div><p id="prog-txt">Se proceseaza...</p></div>
 <div id="tst"></div>
-
+ 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 'use strict';
-
+ 
 // ── Detectare Capacitor (APK nativ) ──
 const IS_NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
-
+ 
 // ── STATE ──
 let map,uMk,aCir,bufL=[];
 let polyL=[];
@@ -365,7 +365,7 @@ let lastB64=null,lastFname='',pCnt=0;
 let mStream=null,isSat=true;
 let logoUrl=null;
 let gallery=[];
-
+ 
 // ── MAP ──
 map=L.map('map',{center:[47.65,23.58],zoom:13,zoomControl:false,attributionControl:false});
 const lSat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:21,maxNativeZoom:19});
@@ -378,7 +378,7 @@ function toggleLayer(){
 function mkPin(){return L.divIcon({className:'',iconSize:[30,40],iconAnchor:[15,40],
   html:'<div style="width:30px;height:40px;position:relative"><div style="width:30px;height:30px;border-radius:50% 50% 50% 0;background:#ef4444;border:3px solid #fff;transform:rotate(-45deg);position:absolute;top:0;left:0;box-shadow:0 3px 10px rgba(0,0,0,.6)"><div style="width:10px;height:10px;border-radius:50%;background:#fff;position:absolute;top:7px;left:7px"></div></div><div style="width:4px;height:10px;background:#ef4444;position:absolute;bottom:0;left:13px;border-radius:0 0 2px 2px"></div></div>'
 });}
-
+ 
 // ── KML ──
 function loadKML(inp){
   const f=inp.files[0];if(!f)return;
@@ -469,7 +469,7 @@ function showAP(f){
   document.getElementById('apb').classList.add('show');
 }
 function closeAP(){document.getElementById('apo').classList.remove('show');document.getElementById('apb').classList.remove('show');}
-
+ 
 // ── GPS ──
 function startGPS(){
   if(gpsOn)return;
@@ -496,7 +496,7 @@ function onPos(p){
 }
 function onPosErr(e){toast('GPS: '+e.message,'wn');}
 function setPl(id,t,c){const el=document.getElementById(id);el.textContent=t;el.className='pl '+(c||'');}
-
+ 
 // ── COMPASS ──
 function startCompass(){
   if(compOn)return;
@@ -603,7 +603,7 @@ function toggleCam(){
 }
 function openCam(){if(!camOn){toast('Porneste camera mai intai','wn');return;}document.getElementById('camo').classList.add('show');}
 function closeCam(){document.getElementById('camo').classList.remove('show');}
-
+ 
 // ══════════════════════════════════════════════════════════════
 // EXIF GPS BUILDER — WGS84 (format 47.123456, 23.123456)
 // Little-endian TIFF, GPS IFD corect
@@ -611,12 +611,12 @@ function closeCam(){document.getElementById('camo').classList.remove('show');}
 function buildEXIF(dtStr, latV, lonV, altV, hdgV) {
   // All offsets are from start of TIFF header ('II')
   // We build a flat byte array directly, no dynamic patching
-
+ 
   function u16LE(v, a) { a.push(v & 0xFF, (v >> 8) & 0xFF); }
   function u32LE(v, a) { a.push(v & 0xFF, (v>>8)&0xFF, (v>>16)&0xFF, (v>>24)&0xFF); }
   function u16BE(v, a) { a.push((v>>8)&0xFF, v&0xFF); }
   function asciiZ(s, a) { for(let i=0;i<s.length;i++) a.push(s.charCodeAt(i)&0xFF); a.push(0); }
-
+ 
   // Convert decimal degrees to DMS rationals (3 RATIONAL values = 24 bytes)
   function dmsBytes(deg) {
     const a = Math.abs(deg);
@@ -633,7 +633,7 @@ function buildEXIF(dtStr, latV, lonV, altV, hdgV) {
     u32LE(sNum, out); u32LE(sDen, out); // seconds: sNum/10000
     return out; // 24 bytes
   }
-
+ 
   // ── Compute exact layout ──
   // TIFF header: 8 bytes (at absolute 0)
   // IFD0: starts at 8
@@ -648,31 +648,31 @@ function buildEXIF(dtStr, latV, lonV, altV, hdgV) {
   //   DateTimeDigitized 20 bytes → 132..151
   // GPSIFD starts at 152:
   //   We build GPS entries depending on available data
-
+ 
   const TIFF_BASE = 0;
   const IFD0_OFF = 8;
   const IFD0_ENTRIES = 4; // DateTime, ExifIFD ptr, GPSIFD ptr, Make
   const IFD0_SIZE = 2 + IFD0_ENTRIES * 12 + 4; // 54
   const IFD0_DATA_OFF = IFD0_OFF + IFD0_SIZE; // 62
-
+ 
   const DT_OFF = IFD0_DATA_OFF; // 62, length 20
   const DT_LEN = 20; // "YYYY:MM:DD HH:MM:SS\0"
-
+ 
   const EXIF_IFD_OFF = DT_OFF + DT_LEN; // 82
   const EXIF_ENTRIES = 2;
   const EXIF_IFD_SIZE = 2 + EXIF_ENTRIES * 12 + 4; // 30
   const EXIF_DATA_OFF = EXIF_IFD_OFF + EXIF_IFD_SIZE; // 112
   const DTO_OFF = EXIF_DATA_OFF;       // DateTimeOriginal 112
   const DTD_OFF = EXIF_DATA_OFF + 20;  // DateTimeDigitized 132
-
+ 
   const GPS_IFD_OFF = DTD_OFF + 20; // 152
-
+ 
   // GPS entries — built dynamically
   // Each entry: tag(2)+type(2)+count(4)+value_or_offset(4) = 12 bytes
   // Values > 4 bytes go in GPS data heap after GPS IFD
   let gpsEntryList = []; // {tag, type, count, inline:[], OR heapOff}
   let gpsHeap = [];
-
+ 
   if (latV != null && lonV != null) {
     // GPSVersionID BYTE 4 (fits inline)
     gpsEntryList.push({tag:0x0000, type:1, count:4, inline:[2,3,0,0]});
@@ -705,18 +705,18 @@ function buildEXIF(dtStr, latV, lonV, altV, hdgV) {
     gpsHeap.push(...out);
     gpsEntryList.push({tag:0x0011, type:5, count:1, heapOff:hOff});
   }
-
+ 
   const GPS_IFD_HEADER_SIZE = 2 + gpsEntryList.length * 12 + 4;
   const GPS_HEAP_BASE = GPS_IFD_OFF + GPS_IFD_HEADER_SIZE; // absolute offset of heap
-
+ 
   // ── Assemble full byte array ──
   const B = []; // the complete TIFF data
-
+ 
   // TIFF header (8 bytes)
   B.push(0x49, 0x49); // 'II' little-endian
   B.push(0x2A, 0x00); // TIFF magic
   u32LE(IFD0_OFF, B); // offset to IFD0
-
+ 
   // IFD0 (starts at 8)
   u16LE(IFD0_ENTRIES, B);
   // Entry: DateTime 0x0132 ASCII 20 bytes → offset DT_OFF
@@ -728,11 +728,11 @@ function buildEXIF(dtStr, latV, lonV, altV, hdgV) {
   // Entry: GPSIFD 0x8825 LONG 1 → GPS_IFD_OFF
   u16LE(0x8825,B); u16LE(4,B); u32LE(1,B); u32LE(GPS_IFD_OFF,B);
   u32LE(0, B); // next IFD = 0
-
+ 
   // IFD0 data: DateTime ASCII at DT_OFF (currently B.length should == 62)
   while(B.length < DT_OFF) B.push(0);
   asciiZ(dtStr, B); // 20 bytes (19 chars + \0)
-
+ 
   // ExifIFD at EXIF_IFD_OFF (82)
   while(B.length < EXIF_IFD_OFF) B.push(0);
   u16LE(EXIF_ENTRIES, B);
@@ -746,7 +746,7 @@ function buildEXIF(dtStr, latV, lonV, altV, hdgV) {
   asciiZ(dtStr, B); // DateTimeOriginal
   while(B.length < DTD_OFF) B.push(0);
   asciiZ(dtStr, B); // DateTimeDigitized
-
+ 
   // GPSIFD at GPS_IFD_OFF (152)
   while(B.length < GPS_IFD_OFF) B.push(0);
   u16LE(gpsEntryList.length, B);
@@ -762,7 +762,7 @@ function buildEXIF(dtStr, latV, lonV, altV, hdgV) {
   u32LE(0, B); // next IFD = 0
   // GPS heap data
   B.push(...gpsHeap);
-
+ 
   // ── Wrap in APP1 ──
   const exifMarker = [0x45,0x78,0x69,0x66,0x00,0x00]; // 'Exif\0\0'
   const app1Body = [...exifMarker, ...B];
@@ -772,32 +772,32 @@ function buildEXIF(dtStr, latV, lonV, altV, hdgV) {
   app1.push(...app1Body);
   return new Uint8Array(app1);
 }
-
+ 
 // ── CAPTURE ──
 function doCapture() {
   const vid = document.getElementById('vid');
   if (!vid.videoWidth) { toast('Camera nu este gata','wn'); return; }
-
+ 
   showProg('Se captureaza...');
-
+ 
   const w = vid.videoWidth, h = vid.videoHeight;
   const cnv = document.getElementById('cnv');
   cnv.width = w; cnv.height = h;
   const ctx = cnv.getContext('2d');
   ctx.drawImage(vid, 0, 0, w, h);
-
+ 
   const pd = n => String(n).padStart(2,'0');
   const now = new Date();
   const ts = pd(now.getDate())+'.'+pd(now.getMonth()+1)+'.'+now.getFullYear()+
     '  '+pd(now.getHours())+':'+pd(now.getMinutes())+':'+pd(now.getSeconds());
   const dtExif = now.getFullYear()+':'+pd(now.getMonth()+1)+':'+pd(now.getDate())+
     ' '+pd(now.getHours())+':'+pd(now.getMinutes())+':'+pd(now.getSeconds());
-
+ 
   const pid = (curF && selField && curF[selField]) ?
     String(curF[selField]).replace(/[^a-zA-Z0-9_\-]/g,'_').substring(0,40) : 'parcela';
   lastFname = 'ROPhotoKml_'+pid+'_'+now.getFullYear()+pd(now.getMonth()+1)+pd(now.getDate())+
     '_'+pd(now.getHours())+pd(now.getMinutes())+pd(now.getSeconds())+'.jpg';
-
+ 
   const lines = [
     curF ? lbl(curF) : '— Parcela neselectata —',
     'KML: ' + kmlName,
@@ -807,31 +807,31 @@ function doCapture() {
       '  Azimut: '+(hdg!=null?hdg+'° '+cdir(hdg):'—'),
     ts
   ];
-
+ 
   const fs = Math.max(18, Math.round(h * 0.024));
   const pp = Math.round(fs * 0.65);
   const lh = Math.round(fs * 1.55);
   const bH = lines.length * lh + pp * 2;
   const bY = h - bH;
-
+ 
   ctx.fillStyle = 'rgba(0,0,0,0.50)';
   ctx.fillRect(0, bY, w, bH);
   ctx.fillStyle = '#185FA5';
   ctx.fillRect(0, bY, w, 3);
-
+ 
   ctx.font = 'bold '+Math.round(fs*1.1)+'px "Courier New",monospace';
   ctx.fillStyle = '#FAC775';
   ctx.fillText(lines[0], pp, bY+pp+Math.round(fs));
-
+ 
   ctx.font = 'bold '+fs+'px "Courier New",monospace';
   ctx.fillStyle = '#a8d5a8';
   ctx.fillText(lines[1], pp, bY+pp+Math.round(fs)+lh);
-
+ 
   ctx.font = fs+'px "Courier New",monospace';
   ctx.fillStyle = '#fff';
   for(let i=2;i<lines.length;i++)
     ctx.fillText(lines[i], pp, bY+pp+Math.round(fs)+i*lh);
-
+ 
   function doFinish() {
     // Get base64 from canvas directly — works in ALL environments including WebView
     showProg('Se aplica EXIF GPS...');
@@ -843,7 +843,7 @@ function doCapture() {
       const binStr = atob(b64);
       const orig = new Uint8Array(binStr.length);
       for(let i=0;i<binStr.length;i++) orig[i] = binStr.charCodeAt(i);
-
+ 
       // Strip existing APP0/APP1
       let skip = 2;
       while(skip < orig.length-3 && orig[skip]===0xFF) {
@@ -853,20 +853,20 @@ function doCapture() {
           skip += 2 + mLen;
         } else break;
       }
-
+ 
       const app1 = buildEXIF(dtExif, lat, lon, alt, hdg);
-
+ 
       // Build new JPEG
       const out = new Uint8Array(2 + app1.length + orig.length - skip);
       out[0] = 0xFF; out[1] = 0xD8;
       out.set(app1, 2);
       out.set(orig.slice(skip), 2 + app1.length);
-
+ 
       // Convert back to base64
       let outBin = '';
       for(let i=0;i<out.length;i++) outBin += String.fromCharCode(out[i]);
       lastB64 = btoa(outBin);
-
+ 
       showPreview('data:image/jpeg;base64,'+lastB64);
     } catch(err) {
       console.error('EXIF err:', err);
@@ -876,7 +876,7 @@ function doCapture() {
       showPreview('data:image/jpeg;base64,'+lastB64);
     }
   }
-
+ 
   if(logoUrl) {
     const li = new Image();
     li.onload = function() {
@@ -893,19 +893,19 @@ function doCapture() {
     doFinish();
   }
 }
-
+ 
 function showPreview(dataUrl) {
   hideProg();
   document.getElementById('pimg').src = dataUrl;
   closeCam();
   document.getElementById('prevo').classList.add('show');
 }
-
+ 
 // ── SAVE — funcționează atât pe web cât și pe APK Android ──
 async function saveP() {
   if(!lastB64) { toast('Nu exista fotografie','er'); return; }
   showProg('Se salveaza fotografia...');
-
+ 
   try {
     if(IS_NATIVE) {
       // ── Salvare nativa Android prin Capacitor Filesystem ──
@@ -948,7 +948,7 @@ async function saveP() {
     toast('Eroare salvare: '+err.message,'er');
   }
 }
-
+ 
 function discardP() {
   document.getElementById('prevo').classList.remove('show');
   document.getElementById('camo').classList.add('show');
