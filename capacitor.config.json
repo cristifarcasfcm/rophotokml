@@ -5,7 +5,11 @@
   "android": {
     "allowMixedContent": true,
     "webContentsDebuggingEnabled": false,
-    "captureInput": true,
     "backgroundColor": "#0d1a0d"
+  },
+  "plugins": {
+    "Filesystem": {
+      "androidScheme": "https"
+    }
   }
 }
