@@ -23,7 +23,7 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Create www
+      - name: Create www folder
         run: mkdir -p www && cp index.html www/index.html
 
       - name: Setup Java 17
@@ -41,16 +41,13 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
-      - name: Patch AndroidManifest permissions
+      - name: Add permissions to AndroidManifest
         run: |
           M="android/app/src/main/AndroidManifest.xml"
-          sed -i 's|<uses-permission android:name="android.permission.INTERNET" />|<uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <uses-permission android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS" />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />\n    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />\n    <uses-feature android:name="android.hardware.camera" android:required="false" />\n    <uses-feature android:name="android.hardware.location.gps" android:required="true" />\n    <uses-feature android:name="android.hardware.sensor.compass" android:required="false" />|' "$M"
-
-      - name: Patch build.gradle targetSdk 34
-        run: |
-          G="android/app/build.gradle"
-          sed -i 's/compileSdkVersion [0-9]*/compileSdkVersion 34/' "$G"
-          sed -i 's/targetSdkVersion [0-9]*/targetSdkVersion 34/' "$G"
+          # Insert permissions before closing </manifest> tag
+          sed -i 's|</manifest>|    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <uses-permission android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS" />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />\n    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />\n    <uses-feature android:name="android.hardware.camera" android:required="false" />\n    <uses-feature android:name="android.hardware.location.gps" android:required="true" />\n    <uses-feature android:name="android.hardware.sensor.compass" android:required="false" />\n</manifest>|' "$M"
+          echo "=== AndroidManifest.xml ==="
+          cat "$M"
 
       - name: Build APK debug
         run: |
