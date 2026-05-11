@@ -44,10 +44,7 @@ jobs:
       - name: Add permissions to AndroidManifest
         run: |
           M="android/app/src/main/AndroidManifest.xml"
-          # Insert permissions before closing </manifest> tag
           sed -i 's|</manifest>|    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <uses-permission android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS" />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />\n    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />\n    <uses-feature android:name="android.hardware.camera" android:required="false" />\n    <uses-feature android:name="android.hardware.location.gps" android:required="true" />\n    <uses-feature android:name="android.hardware.sensor.compass" android:required="false" />\n</manifest>|' "$M"
-          echo "=== AndroidManifest.xml ==="
-          cat "$M"
 
       - name: Build APK debug
         run: |
