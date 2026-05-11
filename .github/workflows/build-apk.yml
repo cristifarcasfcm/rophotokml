@@ -5,9 +5,6 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -38,30 +35,30 @@ jobs:
       - name: Install Capacitor CLI
         run: npm install -g @capacitor/cli@5
 
-      - name: Add Android
+      - name: Add Android platform
         run: npx cap add android
 
-      - name: Sync
+      - name: Sync Capacitor
         run: npx cap sync android
 
-      - name: Patch AndroidManifest
+      - name: Patch AndroidManifest permissions
         run: |
           M="android/app/src/main/AndroidManifest.xml"
-          sed -i 's|<uses-permission android:name="android.permission.INTERNET" />|<uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <uses-permission android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS" />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />\n    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />\n    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />\n    <uses-feature android:name="android.hardware.camera" android:required="false" />\n    <uses-feature android:name="android.hardware.location.gps" android:required="true" />\n    <uses-feature android:name="android.hardware.sensor.compass" android:required="false" />|' "$M"
+          sed -i 's|<uses-permission android:name="android.permission.INTERNET" />|<uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <uses-permission android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS" />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />\n    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />\n    <uses-feature android:name="android.hardware.camera" android:required="false" />\n    <uses-feature android:name="android.hardware.location.gps" android:required="true" />\n    <uses-feature android:name="android.hardware.sensor.compass" android:required="false" />|' "$M"
 
-      - name: Patch build.gradle targetSdk
+      - name: Patch build.gradle targetSdk 34
         run: |
           G="android/app/build.gradle"
           sed -i 's/compileSdkVersion [0-9]*/compileSdkVersion 34/' "$G"
           sed -i 's/targetSdkVersion [0-9]*/targetSdkVersion 34/' "$G"
 
-      - name: Build APK
+      - name: Build APK debug
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
-      - name: Upload APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: ROPhotoKml-APK
