@@ -6,10 +6,5 @@
     "allowMixedContent": true,
     "webContentsDebuggingEnabled": false,
     "backgroundColor": "#0d1a0d"
-  },
-  "plugins": {
-    "Filesystem": {
-      "androidScheme": "https"
-    }
   }
 }
