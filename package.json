@@ -6,12 +6,11 @@
     "build": "echo ok"
   },
   "dependencies": {
-    "@capacitor/android": "^5.7.0",
-    "@capacitor/core": "^5.7.0",
-    "@capacitor/filesystem": "^5.2.1",
-    "@capacitor/media": "^6.0.0"
+    "@capacitor/android": "5.7.0",
+    "@capacitor/core": "5.7.0",
+    "@capacitor/filesystem": "5.2.1"
   },
   "devDependencies": {
-    "@capacitor/cli": "^5.7.0"
+    "@capacitor/cli": "5.7.0"
   }
 }
