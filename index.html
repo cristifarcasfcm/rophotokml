@@ -19,6 +19,8 @@ html,body{height:100%;overflow:hidden;background:#0d1a0d;color:var(--txt);font-f
 #map{position:fixed;inset:0;z-index:0}
 .leaflet-container{background:#1a2d1a!important}
 .leaflet-control-zoom{display:none!important}
+
+/* TOP */
 #top{position:fixed;top:0;left:52px;right:0;z-index:300;padding:6px 8px;
   display:flex;align-items:center;gap:6px;
   background:linear-gradient(to bottom,rgba(0,0,0,.88) 70%,transparent);pointer-events:none}
@@ -39,6 +41,8 @@ html,body{height:100%;overflow:hidden;background:#0d1a0d;color:var(--txt);font-f
   border-bottom:1px solid rgba(34,197,94,.08);color:var(--txt)}
 .si:last-child{border-bottom:none}
 .si:active{background:rgba(34,197,94,.15);color:var(--g)}
+
+/* SIDEBAR */
 #sidebar{position:fixed;left:0;top:0;bottom:0;width:50px;z-index:300;
   display:flex;flex-direction:column;align-items:center;
   padding:6px 0 12px;gap:3px;
@@ -56,6 +60,8 @@ html,body{height:100%;overflow:hidden;background:#0d1a0d;color:var(--txt);font-f
 .sb.on .sl{color:var(--g)}
 .sb.wb.on .sl{color:var(--a)}
 .sp{flex:1}
+
+/* BOTTOM */
 #bot{position:fixed;bottom:0;left:50px;right:0;z-index:300;
   padding:6px 10px 18px;
   background:linear-gradient(to top,rgba(0,0,0,.94) 70%,transparent)}
@@ -98,6 +104,8 @@ html,body{height:100%;overflow:hidden;background:#0d1a0d;color:var(--txt);font-f
 #gbtn:active{transform:scale(.91)}
 #gbtn svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2}
 #gbtn span{font-size:7px;font-family:var(--mono);color:var(--muted)}
+
+/* PROXIMITY */
 #prox{position:fixed;right:8px;bottom:92px;z-index:250;
   width:42px;height:42px;border-radius:50%;
   background:rgba(0,0,0,.6);border:2px solid #444;
@@ -105,6 +113,8 @@ html,body{height:100%;overflow:hidden;background:#0d1a0d;color:var(--txt);font-f
   font-family:var(--mono);font-size:8px;color:#666;text-align:center;line-height:1.3;
   transition:all .4s;pointer-events:none;white-space:pre-line}
 #prox.near{border-color:var(--g);color:var(--g);box-shadow:0 0 14px var(--glow);background:rgba(34,197,94,.1)}
+
+/* ATTR POPUP */
 #apo{position:fixed;inset:0;z-index:590;background:rgba(0,0,0,.6);display:none}
 #apo.show{display:block}
 #apb{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
@@ -127,6 +137,8 @@ html,body{height:100%;overflow:hidden;background:#0d1a0d;color:var(--txt);font-f
 .ab{flex:1;padding:7px;border-radius:7px;border:none;font-size:11px;font-family:var(--mono);cursor:pointer}
 .ab.p{background:rgba(34,197,94,.18);border:1px solid var(--g);color:var(--g)}
 .ab.s{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);color:var(--muted)}
+
+/* CAMERA */
 #camo{position:fixed;inset:0;z-index:700;background:#000;display:none;flex-direction:column}
 #camo.show{display:flex}
 #vwr{position:relative;flex:1;overflow:hidden;background:#000}
@@ -149,6 +161,8 @@ html,body{height:100%;overflow:hidden;background:#0d1a0d;color:var(--txt);font-f
 #csb:active{transform:scale(.91)}
 #csd{width:24px;height:24px;border-radius:50%;background:#fff}
 canvas{display:none}
+
+/* PREVIEW */
 #prevo{position:fixed;inset:0;z-index:800;background:#000;display:none;
   flex-direction:column;align-items:center;justify-content:center}
 #prevo.show{display:flex}
@@ -162,19 +176,40 @@ canvas{display:none}
 .cb.no{background:#991b1b;border:2px solid #ef4444}
 .cb svg{width:19px;height:19px;stroke:#fff;fill:none;stroke-width:2.5;pointer-events:none}
 .cb span{font-size:8px;color:#fff;font-family:var(--mono)}
-#galo{position:fixed;inset:0;z-index:850;background:rgba(0,0,0,.96);display:none;flex-direction:column}
+
+/* GALLERY */
+#galo{position:fixed;inset:0;z-index:850;background:rgba(0,0,0,.97);display:none;flex-direction:column}
 #galo.show{display:flex}
-#galh{padding:10px 12px;background:rgba(8,18,8,.95);border-bottom:1px solid var(--bord);
-  display:flex;align-items:center;justify-content:space-between}
+#galh{padding:10px 12px;background:rgba(8,18,8,.98);border-bottom:1px solid var(--bord);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 #galh h2{font-family:var(--mono);font-size:12px;color:var(--g)}
-#galh button{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer}
-#galg{flex:1;overflow-y:auto;padding:8px;display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
-.gt{position:relative;aspect-ratio:1;cursor:pointer;border-radius:6px;overflow:hidden;border:1px solid var(--bord)}
-.gt img{width:100%;height:100%;object-fit:cover}
-.gt .gd{position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;
-  background:rgba(153,27,27,.9);border:none;color:#fff;font-size:11px;cursor:pointer;
-  display:flex;align-items:center;justify-content:center}
-#upl{position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.92);
+#galh button{background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:0 4px}
+#galg{flex:1;overflow-y:auto;padding:8px;display:grid;grid-template-columns:repeat(3,1fr);gap:5px;align-content:start}
+.gt{position:relative;aspect-ratio:1;border-radius:6px;overflow:hidden;border:1px solid var(--bord)}
+.gt img{width:100%;height:100%;object-fit:cover;cursor:pointer;display:block}
+.gt .gd{position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;
+  background:rgba(153,27,27,.92);border:none;color:#fff;font-size:12px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;z-index:2}
+.gname{font-family:var(--mono);font-size:8px;color:var(--muted);
+  position:absolute;bottom:0;left:0;right:0;padding:2px 4px;
+  background:rgba(0,0,0,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* FULL PHOTO VIEWER */
+#fullview{position:fixed;inset:0;z-index:900;background:#000;display:none;
+  flex-direction:column;align-items:center;justify-content:center}
+#fullview.show{display:flex}
+#fullimg{max-width:100%;max-height:100vh;object-fit:contain}
+#fvclose{position:absolute;top:12px;right:12px;width:40px;height:40px;border-radius:50%;
+  background:rgba(0,0,0,.75);border:1px solid rgba(255,255,255,.4);
+  color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  z-index:10}
+#fvname{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);
+  font-family:var(--mono);font-size:10px;color:rgba(255,255,255,.6);
+  background:rgba(0,0,0,.5);padding:4px 10px;border-radius:10px;white-space:nowrap;
+  max-width:90%;overflow:hidden;text-overflow:ellipsis}
+
+/* UPLOAD */
+#upl{position:fixed;inset:0;z-index:950;background:rgba(0,0,0,.92);
   display:flex;align-items:center;justify-content:center}
 #upb{background:#0d1a0d;border:1px solid var(--bord);border-radius:16px;
   padding:22px 18px;width:88%;max-width:330px;text-align:center}
@@ -185,6 +220,8 @@ canvas{display:none}
   color:var(--g);font-size:13px;cursor:pointer}
 #usk{margin-top:10px;background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer}
 input[type=file]{display:none}
+
+/* PROGRESS */
 #prog{position:fixed;inset:0;z-index:1100;background:rgba(0,0,0,.75);
   display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px}
 #prog.show{display:flex}
@@ -192,12 +229,15 @@ input[type=file]{display:none}
 .spin{width:40px;height:40px;border:3px solid rgba(34,197,94,.2);border-top-color:var(--g);
   border-radius:50%;animation:sp 0.8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
+
+/* TOAST */
 #tst{position:fixed;top:50px;left:50%;transform:translateX(-50%);z-index:1200;
   font-family:var(--mono);font-size:11px;padding:6px 14px;border-radius:20px;
   white-space:nowrap;display:none;pointer-events:none;max-width:90%;text-align:center}
 #tst.ok{background:rgba(21,128,61,.94);border:1px solid var(--g);color:#d1fae5}
 #tst.wn{background:rgba(146,64,14,.94);border:1px solid var(--a);color:#fef3c7}
 #tst.er{background:rgba(153,27,27,.94);border:1px solid var(--r);color:#fee2e2}
+
 .leaflet-popup-content-wrapper{background:rgba(8,18,8,.97)!important;color:var(--txt)!important;
   border:1px solid var(--bord)!important;border-radius:8px!important;font-family:var(--mono);font-size:11px!important}
 .leaflet-popup-tip{background:rgba(8,18,8,.97)!important}
@@ -328,8 +368,17 @@ input[type=file]{display:none}
   </div>
 </div>
 <div id="galo">
-  <div id="galh"><h2>Galerie ROPhotoKml</h2><button onclick="closeGallery()">✕</button></div>
+  <div id="galh">
+    <h2>Galerie ROPhotoKml</h2>
+    <button onclick="closeGallery()">✕</button>
+  </div>
   <div id="galg"></div>
+</div>
+<!-- FULL PHOTO VIEWER -->
+<div id="fullview">
+  <img id="fullimg" alt="Fotografie">
+  <button id="fvclose" onclick="closeFull()">✕</button>
+  <div id="fvname"></div>
 </div>
 <div id="upl">
   <div id="upb">
@@ -345,14 +394,14 @@ input[type=file]{display:none}
 </div>
 <div id="prog"><div class="spin"></div><p id="prog-txt">Se proceseaza...</p></div>
 <div id="tst"></div>
- 
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 'use strict';
- 
-// ── Detectare Capacitor (APK nativ) ──
+
+// ── Detectare mediu ──
 const IS_NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
- 
+
 // ── STATE ──
 let map,uMk,aCir,bufL=[];
 let polyL=[];
@@ -365,20 +414,41 @@ let lastB64=null,lastFname='',pCnt=0;
 let mStream=null,isSat=true;
 let logoUrl=null;
 let gallery=[];
- 
+
 // ── MAP ──
 map=L.map('map',{center:[47.65,23.58],zoom:13,zoomControl:false,attributionControl:false});
 const lSat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:21,maxNativeZoom:19});
 const lOSM=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:21,maxNativeZoom:19});
 lSat.addTo(map);
+
 function toggleLayer(){
-  if(isSat){map.removeLayer(lSat);lOSM.addTo(map);}else{map.removeLayer(lOSM);lSat.addTo(map);}
-  isSat=!isSat;document.getElementById('blyr').classList.toggle('on',!isSat);
+  if(isSat){map.removeLayer(lSat);lOSM.addTo(map);}
+  else{map.removeLayer(lOSM);lSat.addTo(map);}
+  isSat=!isSat;
+  document.getElementById('blyr').classList.toggle('on',!isSat);
 }
-function mkPin(){return L.divIcon({className:'',iconSize:[30,40],iconAnchor:[15,40],
-  html:'<div style="width:30px;height:40px;position:relative"><div style="width:30px;height:30px;border-radius:50% 50% 50% 0;background:#ef4444;border:3px solid #fff;transform:rotate(-45deg);position:absolute;top:0;left:0;box-shadow:0 3px 10px rgba(0,0,0,.6)"><div style="width:10px;height:10px;border-radius:50%;background:#fff;position:absolute;top:7px;left:7px"></div></div><div style="width:4px;height:10px;background:#ef4444;position:absolute;bottom:0;left:13px;border-radius:0 0 2px 2px"></div></div>'
-});}
- 
+
+// ── CHECKPOINT MARKER — vizibil la orice zoom ──
+function mkPin(){
+  // SVG checkpoint: cerc exterior + punct interior + picior, vizibil si la zoom mic
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="36" height="46" viewBox="0 0 36 46">
+    <filter id="sh"><feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.5"/></filter>
+    <g filter="url(#sh)">
+      <circle cx="18" cy="16" r="15" fill="#ef4444" stroke="#fff" stroke-width="3"/>
+      <circle cx="18" cy="16" r="6" fill="#fff"/>
+      <circle cx="18" cy="16" r="3" fill="#ef4444"/>
+      <path d="M18 31 L18 44" stroke="#ef4444" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="18" cy="44" r="2" fill="#ef4444"/>
+    </g>
+  </svg>`;
+  return L.divIcon({
+    className:'',
+    iconSize:[36,46],
+    iconAnchor:[18,46],
+    html:svg
+  });
+}
+
 // ── KML ──
 function loadKML(inp){
   const f=inp.files[0];if(!f)return;
@@ -402,7 +472,8 @@ function parseKML(xml){
       });
     });
     f._c=cs;
-    if(cs.length){const las=cs.map(c=>c[0]),los=cs.map(c=>c[1]);f._ctr=[(Math.min(...las)+Math.max(...las))/2,(Math.min(...los)+Math.max(...los))/2];}
+    if(cs.length){const las=cs.map(c=>c[0]),los=cs.map(c=>c[1]);
+      f._ctr=[(Math.min(...las)+Math.max(...las))/2,(Math.min(...los)+Math.max(...los))/2];}
     feats.push(f);
   });
   allF=Array.from(fs);buildFS();drawAll();fitAll();
@@ -422,14 +493,18 @@ function lbl(f){
   return(selField==='__nm__'?'':selField+': ')+(f[k]||'—');
 }
 function ex(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
 function drawAll(){
   polyL.forEach(p=>{map.removeLayer(p.ly);if(p.mk)map.removeLayer(p.mk);});
   bufL.forEach(l=>map.removeLayer(l));polyL=[];bufL=[];
   feats.forEach((f,i)=>{
     if(f._c.length<2)return;
     const sel=(curF===f);
-    const ly=L.polygon(f._c,{color:sel?'#f59e0b':'#22c55e',weight:sel?3:2,
-      fillColor:sel?'#f59e0b':'#22c55e',fillOpacity:sel?.28:.10,dashArray:sel?'7,4':null});
+    const ly=L.polygon(f._c,{
+      color:sel?'#f59e0b':'#22c55e',weight:sel?3:2,
+      fillColor:sel?'#f59e0b':'#22c55e',fillOpacity:sel?.28:.10,
+      dashArray:sel?'7,4':null
+    });
     if(bufOn&&f._ctr){
       const buf=L.circle(f._ctr,{radius:10,color:'#f59e0b',weight:1,
         fillColor:'#f59e0b',fillOpacity:.07,dashArray:'4,4',interactive:false}).addTo(map);
@@ -437,12 +512,15 @@ function drawAll(){
     }
     let mk=null;
     if(f._ctr){
-      const ico=L.divIcon({className:'',iconAnchor:[0,8],
-        html:'<div style="background:rgba(0,0,0,.75);color:#FAC775;font-family:monospace;font-size:9px;padding:2px 5px;border-radius:4px;border:1px solid rgba(250,199,117,.3);white-space:nowrap;pointer-events:none">'+ex(lbl(f))+'</div>'
+      // Label cu fundal solid vizibil si la zoom mic
+      const ico=L.divIcon({className:'',iconAnchor:[0,0],
+        html:'<div style="background:rgba(0,0,0,.82);color:#FAC775;font-family:monospace;font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;border:1px solid #FAC775;white-space:nowrap;pointer-events:none;box-shadow:0 1px 4px rgba(0,0,0,.7)">'+ex(lbl(f))+'</div>'
       });
       mk=L.marker(f._ctr,{icon:ico,interactive:false}).addTo(map);
     }
-    ly.on('click',()=>selParcel(f,ly,i));ly.addTo(map);polyL.push({ly,mk,f,i});
+    ly.on('click',()=>selParcel(f,ly,i));
+    ly.addTo(map);
+    polyL.push({ly,mk,f,i});
   });
 }
 function fitAll(){
@@ -452,10 +530,12 @@ function fitAll(){
 }
 function selParcel(f,ly,idx){
   if(selLy&&selLy!==ly)selLy.setStyle({color:'#22c55e',fillColor:'#22c55e',fillOpacity:.10,weight:2,dashArray:null});
-  curF=f;selLy=ly;ly.setStyle({color:'#f59e0b',fillColor:'#f59e0b',fillOpacity:.28,weight:3,dashArray:'7,4'});
+  curF=f;selLy=ly;
+  ly.setStyle({color:'#f59e0b',fillColor:'#f59e0b',fillOpacity:.28,weight:3,dashArray:'7,4'});
   map.fitBounds(ly.getBounds(),{padding:[40,40],maxZoom:18});
   updChip();updSt();chkProx();showAP(f);
 }
+
 function showAP(f){
   const body=document.getElementById('apd');body.innerHTML='';
   Object.keys(f).forEach(k=>{
@@ -468,13 +548,17 @@ function showAP(f){
   document.getElementById('apo').classList.add('show');
   document.getElementById('apb').classList.add('show');
 }
-function closeAP(){document.getElementById('apo').classList.remove('show');document.getElementById('apb').classList.remove('show');}
- 
-// ── GPS ──
+function closeAP(){
+  document.getElementById('apo').classList.remove('show');
+  document.getElementById('apb').classList.remove('show');
+}
+
+// ── GPS (hardware only) ──
 function startGPS(){
   if(gpsOn)return;
   if(!navigator.geolocation){toast('GPS indisponibil','wn');return;}
-  navigator.geolocation.watchPosition(onPos,onPosErr,{enableHighAccuracy:true,maximumAge:0,timeout:60000});
+  navigator.geolocation.watchPosition(onPos,onPosErr,
+    {enableHighAccuracy:true,maximumAge:0,timeout:60000});
   gpsOn=true;document.getElementById('bgps').classList.add('on');toast('GPS activat','ok');
 }
 function onPos(p){
@@ -496,7 +580,7 @@ function onPos(p){
 }
 function onPosErr(e){toast('GPS: '+e.message,'wn');}
 function setPl(id,t,c){const el=document.getElementById(id);el.textContent=t;el.className='pl '+(c||'');}
- 
+
 // ── COMPASS ──
 function startCompass(){
   if(compOn)return;
@@ -517,9 +601,11 @@ function onOri(e){
     document.getElementById('ldir').textContent=hdg+'° '+cdir(hdg);updSt();}
 }
 function cdir(d){return['N','NE','E','SE','S','SV','V','NV'][Math.round(d/45)%8];}
+
 function toggleBuf(){
   bufOn=!bufOn;document.getElementById('bbuf').classList.toggle('on',bufOn);
-  drawAll();chkProx();toast(bufOn?'Buffer 10m ACTIV':'Buffer DEZACTIVAT',bufOn?'ok':'wn');
+  drawAll();chkProx();
+  toast(bufOn?'Buffer 10m ACTIV — trebuie sa fii langa parcela':'Buffer DEZACTIVAT — fotografiere libera',bufOn?'ok':'wn');
 }
 function autoSel(){
   if(!lat||!feats.length)return;
@@ -529,7 +615,8 @@ function autoSel(){
     const pl=polyL.find(p=>p.f===best);
     if(pl&&curF!==best){
       if(selLy)selLy.setStyle({color:'#22c55e',fillColor:'#22c55e',fillOpacity:.10,weight:2,dashArray:null});
-      curF=best;selLy=pl.ly;pl.ly.setStyle({color:'#f59e0b',fillColor:'#f59e0b',fillOpacity:.28,weight:3,dashArray:'7,4'});
+      curF=best;selLy=pl.ly;
+      pl.ly.setStyle({color:'#f59e0b',fillColor:'#f59e0b',fillOpacity:.28,weight:3,dashArray:'7,4'});
       updChip();updSt();
     }
   }
@@ -553,6 +640,7 @@ function hav(a1,o1,a2,o2){
 function pip(la,lo,cs){let ins=false;for(let i=0,j=cs.length-1;i<cs.length;j=i++){const xi=cs[i][0],yi=cs[i][1],xj=cs[j][0],yj=cs[j][1];if((yi>lo)!==(yj>lo)&&la<(xj-xi)*(lo-yi)/(yj-yi)+xi)ins=!ins;}return ins;}
 function dseg(la,lo,a,b){const dx=b[0]-a[0],dy=b[1]-a[1];if(!dx&&!dy)return hav(la,lo,a[0],a[1]);const t=Math.max(0,Math.min(1,((la-a[0])*dx+(lo-a[1])*dy)/(dx*dx+dy*dy)));return hav(la,lo,a[0]+t*dx,a[1]+t*dy);}
 function d2poly(la,lo,cs){if(pip(la,lo,cs))return 0;let m=Infinity;for(let i=0;i<cs.length-1;i++){const d=dseg(la,lo,cs[i],cs[i+1]);if(d<m)m=d;}return m;}
+
 function onSrch(v){
   const box=document.getElementById('sdrop');
   if(!v.trim()||!feats.length){box.style.display='none';return;}
@@ -564,6 +652,7 @@ function onSrch(v){
 }
 function srchSel(i){const f=feats[i];const pl=polyL.find(p=>p.f===f);if(pl)selParcel(f,pl.ly,pl.i);document.getElementById('sb').value='';document.getElementById('sdrop').style.display='none';}
 document.addEventListener('click',e=>{if(!e.target.closest('#sb')&&!e.target.closest('#sdrop'))document.getElementById('sdrop').style.display='none';});
+
 function updChip(){
   if(!curF){document.getElementById('pchip').classList.remove('show');return;}
   document.getElementById('pchip').classList.add('show');
@@ -582,6 +671,7 @@ function updSt(){
   document.getElementById('vsd').textContent=ts;
 }
 setInterval(()=>{updSt();if(gpsOn)chkProx();updChip();},1000);
+
 function loadLogo(inp){
   const f=inp.files[0];if(!f)return;
   const r=new FileReader();
@@ -603,376 +693,324 @@ function toggleCam(){
 }
 function openCam(){if(!camOn){toast('Porneste camera mai intai','wn');return;}document.getElementById('camo').classList.add('show');}
 function closeCam(){document.getElementById('camo').classList.remove('show');}
- 
-// ══════════════════════════════════════════════════════════════
-// EXIF GPS BUILDER — WGS84 (format 47.123456, 23.123456)
-// Little-endian TIFF, GPS IFD corect
-// ══════════════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════
+// EXIF BUILDER — WGS84, little-endian TIFF
+// Coordonate in format decimal: 47.123456, 23.123456
+// Convertite intern in DMS pentru EXIF standard
+// ══════════════════════════════════════════════════
 function buildEXIF(dtStr, latV, lonV, altV, hdgV) {
-  // All offsets are from start of TIFF header ('II')
-  // We build a flat byte array directly, no dynamic patching
- 
-  function u16LE(v, a) { a.push(v & 0xFF, (v >> 8) & 0xFF); }
-  function u32LE(v, a) { a.push(v & 0xFF, (v>>8)&0xFF, (v>>16)&0xFF, (v>>24)&0xFF); }
-  function u16BE(v, a) { a.push((v>>8)&0xFF, v&0xFF); }
-  function asciiZ(s, a) { for(let i=0;i<s.length;i++) a.push(s.charCodeAt(i)&0xFF); a.push(0); }
- 
-  // Convert decimal degrees to DMS rationals (3 RATIONAL values = 24 bytes)
-  function dmsBytes(deg) {
-    const a = Math.abs(deg);
-    const d = Math.floor(a);
-    const mf = (a - d) * 60;
-    const m = Math.floor(mf);
-    const sf = (mf - m) * 60;
-    // Seconds stored as fraction with denominator 10000
-    const sNum = Math.round(sf * 10000);
-    const sDen = 10000;
-    const out = [];
-    u32LE(d, out); u32LE(1, out);       // degrees: d/1
-    u32LE(m, out); u32LE(1, out);       // minutes: m/1
-    u32LE(sNum, out); u32LE(sDen, out); // seconds: sNum/10000
-    return out; // 24 bytes
+  const B = [];
+  function u16(v){ B.push(v&0xFF,(v>>8)&0xFF); }
+  function u32(v){ B.push(v&0xFF,(v>>8)&0xFF,(v>>16)&0xFF,(v>>24)&0xFF); }
+  function u16be(v){ return [(v>>8)&0xFF,v&0xFF]; }
+  function asc(s){ for(let i=0;i<s.length;i++)B.push(s.charCodeAt(i)&0xFF);B.push(0); }
+  function pad(to){ while(B.length<to)B.push(0); }
+
+  // Convert decimal degrees WGS84 to DMS rationals (24 bytes = 3 RATIONALs)
+  function dms(deg){
+    const a=Math.abs(deg);
+    const d=Math.floor(a);
+    const mf=(a-d)*60;
+    const m=Math.floor(mf);
+    const s=(mf-m)*60;
+    const sN=Math.round(s*1000000); // microseconds precision
+    const sD=1000000;
+    // d/1, m/1, sN/sD
+    return [d,1, m,1, sN,sD]; // 3 pairs → 6 u32 values → 24 bytes
   }
- 
-  // ── Compute exact layout ──
-  // TIFF header: 8 bytes (at absolute 0)
-  // IFD0: starts at 8
-  //   IFD0 has 4 entries → 2 + 4*12 + 4 = 54 bytes → IFD0 ends at 62
-  // IFD0 data area starts at 62:
-  //   DateTime ASCII 20 bytes → 62..81
-  //   padding 1 byte → 82 (to align ExifIFD to even)  [20 bytes = even, no pad needed]
-  // ExifIFD starts at 82:
-  //   2 entries → 2 + 2*12 + 4 = 30 bytes → ExifIFD ends at 112
-  // ExifIFD data at 112:
-  //   DateTimeOriginal 20 bytes → 112..131
-  //   DateTimeDigitized 20 bytes → 132..151
-  // GPSIFD starts at 152:
-  //   We build GPS entries depending on available data
- 
-  const TIFF_BASE = 0;
-  const IFD0_OFF = 8;
-  const IFD0_ENTRIES = 4; // DateTime, ExifIFD ptr, GPSIFD ptr, Make
-  const IFD0_SIZE = 2 + IFD0_ENTRIES * 12 + 4; // 54
-  const IFD0_DATA_OFF = IFD0_OFF + IFD0_SIZE; // 62
- 
-  const DT_OFF = IFD0_DATA_OFF; // 62, length 20
-  const DT_LEN = 20; // "YYYY:MM:DD HH:MM:SS\0"
- 
-  const EXIF_IFD_OFF = DT_OFF + DT_LEN; // 82
-  const EXIF_ENTRIES = 2;
-  const EXIF_IFD_SIZE = 2 + EXIF_ENTRIES * 12 + 4; // 30
-  const EXIF_DATA_OFF = EXIF_IFD_OFF + EXIF_IFD_SIZE; // 112
-  const DTO_OFF = EXIF_DATA_OFF;       // DateTimeOriginal 112
-  const DTD_OFF = EXIF_DATA_OFF + 20;  // DateTimeDigitized 132
- 
-  const GPS_IFD_OFF = DTD_OFF + 20; // 152
- 
-  // GPS entries — built dynamically
-  // Each entry: tag(2)+type(2)+count(4)+value_or_offset(4) = 12 bytes
-  // Values > 4 bytes go in GPS data heap after GPS IFD
-  let gpsEntryList = []; // {tag, type, count, inline:[], OR heapOff}
-  let gpsHeap = [];
- 
-  if (latV != null && lonV != null) {
-    // GPSVersionID BYTE 4 (fits inline)
-    gpsEntryList.push({tag:0x0000, type:1, count:4, inline:[2,3,0,0]});
-    // GPSLatitudeRef ASCII 2 (fits inline)
-    gpsEntryList.push({tag:0x0001, type:2, count:2, inline:[latV>=0?78:83, 0, 0, 0]});
-    // GPSLatitude RATIONAL 3 = 24 bytes → heap
-    const laOff = gpsHeap.length;
-    gpsHeap.push(...dmsBytes(latV));
-    gpsEntryList.push({tag:0x0002, type:5, count:3, heapOff:laOff});
-    // GPSLongitudeRef ASCII 2
-    gpsEntryList.push({tag:0x0003, type:2, count:2, inline:[lonV>=0?69:87, 0, 0, 0]});
-    // GPSLongitude RATIONAL 3 = 24 bytes → heap
-    const loOff = gpsHeap.length;
-    gpsHeap.push(...dmsBytes(lonV));
-    gpsEntryList.push({tag:0x0004, type:5, count:3, heapOff:loOff});
+
+  // Fixed layout:
+  // 0..7   TIFF header
+  // 8..61  IFD0 (4 entries = 2+4*12+4 = 54 bytes)
+  // 62..81 DateTime ASCII (20 bytes)
+  // 82..111 ExifIFD (2 entries = 2+2*12+4 = 30 bytes)
+  // 112..131 DateTimeOriginal
+  // 132..151 DateTimeDigitized
+  // 152..   GPS IFD
+
+  const IFD0=8, DT_D=62, EXIF_IFD=82, DTO_D=112, DTG_D=132, GPS_IFD=152;
+
+  // TIFF header
+  B.push(0x49,0x49,0x2A,0x00);u32(IFD0); // II + magic + IFD0 offset
+
+  // IFD0 at offset 8 — 4 entries
+  u16(4); // entry count
+  // DateTime 0x0132 ASCII 20
+  u16(0x0132);u16(2);u32(20);u32(DT_D);
+  // Make 0x010F ASCII 4 inline
+  u16(0x010F);u16(2);u32(4);B.push(82,80,75,0); // 'RPK\0'
+  // ExifIFD 0x8769 LONG
+  u16(0x8769);u16(4);u32(1);u32(EXIF_IFD);
+  // GPS IFD 0x8825 LONG
+  u16(0x8825);u16(4);u32(1);u32(GPS_IFD);
+  u32(0); // next IFD=0
+
+  // DateTime at 62
+  pad(DT_D); asc(dtStr); // 20 bytes
+
+  // ExifIFD at 82
+  pad(EXIF_IFD);
+  u16(2);
+  u16(0x9003);u16(2);u32(20);u32(DTO_D);  // DateTimeOriginal
+  u16(0x9291);u16(2);u32(20);u32(DTG_D);  // DateTimeDigitized
+  u32(0);
+
+  // DateTimeOriginal at 112
+  pad(DTO_D); asc(dtStr);
+  // DateTimeDigitized at 132
+  pad(DTG_D); asc(dtStr);
+
+  // GPS IFD at 152 — dynamic entries
+  pad(GPS_IFD);
+  const gpsEntries=[];
+  const gpsHeap=[];
+
+  function heapRat(n,d){ const o=gpsHeap.length; const a=[];const push32=(v,ar)=>{ar.push(v&0xFF,(v>>8)&0xFF,(v>>16)&0xFF,(v>>24)&0xFF);};push32(n,gpsHeap);push32(d,gpsHeap);return o;}
+  function heapDMS(deg){
+    const vals=dms(deg);const o=gpsHeap.length;
+    for(let i=0;i<6;i+=2){const n=vals[i],d=vals[i+1];gpsHeap.push(n&0xFF,(n>>8)&0xFF,(n>>16)&0xFF,(n>>24)&0xFF,d&0xFF,(d>>8)&0xFF,(d>>16)&0xFF,(d>>24)&0xFF);}
+    return o;
   }
-  if (altV != null) {
-    gpsEntryList.push({tag:0x0005, type:1, count:1, inline:[altV>=0?0:1,0,0,0]});
-    const aOff = gpsHeap.length;
-    const aAbs = Math.round(Math.abs(altV) * 100);
-    const out=[]; u32LE(aAbs,out); u32LE(100,out);
-    gpsHeap.push(...out);
-    gpsEntryList.push({tag:0x0006, type:5, count:1, heapOff:aOff});
+
+  if(latV!=null&&lonV!=null){
+    gpsEntries.push({tag:0x0000,type:1,count:4,inline:[2,3,0,0]}); // GPSVersionID
+    gpsEntries.push({tag:0x0001,type:2,count:2,inline:[latV>=0?78:83,0,0,0]}); // LatRef N/S
+    gpsEntries.push({tag:0x0002,type:5,count:3,heap:heapDMS(latV)}); // Lat DMS
+    gpsEntries.push({tag:0x0003,type:2,count:2,inline:[lonV>=0?69:87,0,0,0]}); // LonRef E/W
+    gpsEntries.push({tag:0x0004,type:5,count:3,heap:heapDMS(lonV)}); // Lon DMS
   }
-  if (hdgV != null) {
-    gpsEntryList.push({tag:0x0010, type:2, count:2, inline:[84,0,0,0]}); // 'T\0'
-    const hOff = gpsHeap.length;
-    const hNum = Math.round(hdgV*100);
-    const out=[]; u32LE(hNum,out); u32LE(100,out);
-    gpsHeap.push(...out);
-    gpsEntryList.push({tag:0x0011, type:5, count:1, heapOff:hOff});
+  if(altV!=null){
+    gpsEntries.push({tag:0x0005,type:1,count:1,inline:[altV>=0?0:1,0,0,0]});
+    gpsEntries.push({tag:0x0006,type:5,count:1,heap:heapRat(Math.round(Math.abs(altV)*100),100)});
   }
- 
-  const GPS_IFD_HEADER_SIZE = 2 + gpsEntryList.length * 12 + 4;
-  const GPS_HEAP_BASE = GPS_IFD_OFF + GPS_IFD_HEADER_SIZE; // absolute offset of heap
- 
-  // ── Assemble full byte array ──
-  const B = []; // the complete TIFF data
- 
-  // TIFF header (8 bytes)
-  B.push(0x49, 0x49); // 'II' little-endian
-  B.push(0x2A, 0x00); // TIFF magic
-  u32LE(IFD0_OFF, B); // offset to IFD0
- 
-  // IFD0 (starts at 8)
-  u16LE(IFD0_ENTRIES, B);
-  // Entry: DateTime 0x0132 ASCII 20 bytes → offset DT_OFF
-  u16LE(0x0132,B); u16LE(2,B); u32LE(DT_LEN,B); u32LE(DT_OFF,B);
-  // Entry: Make 0x010F ASCII 4 bytes → inline 'RPK\0'
-  u16LE(0x010F,B); u16LE(2,B); u32LE(4,B); B.push(82,80,75,0);
-  // Entry: ExifIFD 0x8769 LONG 1 → EXIF_IFD_OFF
-  u16LE(0x8769,B); u16LE(4,B); u32LE(1,B); u32LE(EXIF_IFD_OFF,B);
-  // Entry: GPSIFD 0x8825 LONG 1 → GPS_IFD_OFF
-  u16LE(0x8825,B); u16LE(4,B); u32LE(1,B); u32LE(GPS_IFD_OFF,B);
-  u32LE(0, B); // next IFD = 0
- 
-  // IFD0 data: DateTime ASCII at DT_OFF (currently B.length should == 62)
-  while(B.length < DT_OFF) B.push(0);
-  asciiZ(dtStr, B); // 20 bytes (19 chars + \0)
- 
-  // ExifIFD at EXIF_IFD_OFF (82)
-  while(B.length < EXIF_IFD_OFF) B.push(0);
-  u16LE(EXIF_ENTRIES, B);
-  // DateTimeOriginal 0x9003 ASCII 20
-  u16LE(0x9003,B); u16LE(2,B); u32LE(DT_LEN,B); u32LE(DTO_OFF,B);
-  // DateTimeDigitized 0x9291 ASCII 20
-  u16LE(0x9291,B); u16LE(2,B); u32LE(DT_LEN,B); u32LE(DTD_OFF,B);
-  u32LE(0, B); // next IFD = 0
-  // ExifIFD data
-  while(B.length < DTO_OFF) B.push(0);
-  asciiZ(dtStr, B); // DateTimeOriginal
-  while(B.length < DTD_OFF) B.push(0);
-  asciiZ(dtStr, B); // DateTimeDigitized
- 
-  // GPSIFD at GPS_IFD_OFF (152)
-  while(B.length < GPS_IFD_OFF) B.push(0);
-  u16LE(gpsEntryList.length, B);
-  gpsEntryList.forEach(e => {
-    u16LE(e.tag, B); u16LE(e.type, B); u32LE(e.count, B);
-    if (e.inline !== undefined) {
-      B.push(...e.inline.slice(0,4));
-    } else {
-      // absolute offset = GPS_HEAP_BASE + e.heapOff
-      u32LE(GPS_HEAP_BASE + e.heapOff, B);
-    }
+  if(hdgV!=null){
+    gpsEntries.push({tag:0x0010,type:2,count:2,inline:[84,0,0,0]}); // 'T\0' True heading
+    gpsEntries.push({tag:0x0011,type:5,count:1,heap:heapRat(Math.round(hdgV*100),100)});
+  }
+
+  // GPS IFD size = 2 + N*12 + 4
+  const GPS_HEAP_BASE = GPS_IFD + 2 + gpsEntries.length*12 + 4;
+
+  u16(gpsEntries.length);
+  gpsEntries.forEach(e=>{
+    u16(e.tag);u16(e.type);u32(e.count);
+    if(e.inline!==undefined){B.push(...e.inline.slice(0,4));}
+    else{u32(GPS_HEAP_BASE+e.heap);}
   });
-  u32LE(0, B); // next IFD = 0
-  // GPS heap data
+  u32(0); // next GPS IFD=0
   B.push(...gpsHeap);
- 
-  // ── Wrap in APP1 ──
-  const exifMarker = [0x45,0x78,0x69,0x66,0x00,0x00]; // 'Exif\0\0'
-  const app1Body = [...exifMarker, ...B];
-  const app1Len = app1Body.length + 2;
-  const app1 = [0xFF, 0xE1];
-  u16BE(app1Len, app1);
-  app1.push(...app1Body);
-  return new Uint8Array(app1);
+
+  // Wrap in APP1
+  const exifH=[0x45,0x78,0x69,0x66,0x00,0x00];
+  const app1Body=[...exifH,...B];
+  const lenBytes=u16be(app1Body.length+2);
+  return new Uint8Array([0xFF,0xE1,...lenBytes,...app1Body]);
 }
- 
+
 // ── CAPTURE ──
-function doCapture() {
-  const vid = document.getElementById('vid');
-  if (!vid.videoWidth) { toast('Camera nu este gata','wn'); return; }
- 
+function doCapture(){
+  const vid=document.getElementById('vid');
+  if(!vid.videoWidth){toast('Camera nu e gata','wn');return;}
   showProg('Se captureaza...');
- 
-  const w = vid.videoWidth, h = vid.videoHeight;
-  const cnv = document.getElementById('cnv');
-  cnv.width = w; cnv.height = h;
-  const ctx = cnv.getContext('2d');
-  ctx.drawImage(vid, 0, 0, w, h);
- 
-  const pd = n => String(n).padStart(2,'0');
-  const now = new Date();
-  const ts = pd(now.getDate())+'.'+pd(now.getMonth()+1)+'.'+now.getFullYear()+
+  const w=vid.videoWidth,h=vid.videoHeight;
+  const cnv=document.getElementById('cnv');
+  cnv.width=w;cnv.height=h;
+  const ctx=cnv.getContext('2d');
+  ctx.drawImage(vid,0,0,w,h);
+
+  const pd=n=>String(n).padStart(2,'0');
+  const now=new Date();
+  const ts=pd(now.getDate())+'.'+pd(now.getMonth()+1)+'.'+now.getFullYear()+
     '  '+pd(now.getHours())+':'+pd(now.getMinutes())+':'+pd(now.getSeconds());
-  const dtExif = now.getFullYear()+':'+pd(now.getMonth()+1)+':'+pd(now.getDate())+
+  const dtExif=now.getFullYear()+':'+pd(now.getMonth()+1)+':'+pd(now.getDate())+
     ' '+pd(now.getHours())+':'+pd(now.getMinutes())+':'+pd(now.getSeconds());
- 
-  const pid = (curF && selField && curF[selField]) ?
-    String(curF[selField]).replace(/[^a-zA-Z0-9_\-]/g,'_').substring(0,40) : 'parcela';
-  lastFname = 'ROPhotoKml_'+pid+'_'+now.getFullYear()+pd(now.getMonth()+1)+pd(now.getDate())+
+
+  const pid=(curF&&selField&&curF[selField])?
+    String(curF[selField]).replace(/[^a-zA-Z0-9_\-]/g,'_').substring(0,40):'parcela';
+  lastFname='ROPhotoKml_'+pid+'_'+now.getFullYear()+pd(now.getMonth()+1)+pd(now.getDate())+
     '_'+pd(now.getHours())+pd(now.getMinutes())+pd(now.getSeconds())+'.jpg';
- 
-  const lines = [
-    curF ? lbl(curF) : '— Parcela neselectata —',
-    'KML: ' + kmlName,
-    lat ? 'Lat: '+lat.toFixed(6)+'   Lon: '+lon.toFixed(6) : 'Lat: —   Lon: —',
+
+  const lines=[
+    curF?lbl(curF):'— Parcela neselectata —',
+    'KML: '+kmlName,
+    lat?'Lat: '+lat.toFixed(6)+'   Lon: '+lon.toFixed(6):'Lat: —   Lon: —',
     'Acc: '+(acc?acc.toFixed(1)+' m':'—')+
       '  Alt: '+(alt!=null?alt.toFixed(1)+' m':'—')+
       '  Azimut: '+(hdg!=null?hdg+'° '+cdir(hdg):'—'),
     ts
   ];
- 
-  const fs = Math.max(18, Math.round(h * 0.024));
-  const pp = Math.round(fs * 0.65);
-  const lh = Math.round(fs * 1.55);
-  const bH = lines.length * lh + pp * 2;
-  const bY = h - bH;
- 
-  ctx.fillStyle = 'rgba(0,0,0,0.50)';
-  ctx.fillRect(0, bY, w, bH);
-  ctx.fillStyle = '#185FA5';
-  ctx.fillRect(0, bY, w, 3);
- 
-  ctx.font = 'bold '+Math.round(fs*1.1)+'px "Courier New",monospace';
-  ctx.fillStyle = '#FAC775';
-  ctx.fillText(lines[0], pp, bY+pp+Math.round(fs));
- 
-  ctx.font = 'bold '+fs+'px "Courier New",monospace';
-  ctx.fillStyle = '#a8d5a8';
-  ctx.fillText(lines[1], pp, bY+pp+Math.round(fs)+lh);
- 
-  ctx.font = fs+'px "Courier New",monospace';
-  ctx.fillStyle = '#fff';
+
+  const fs=Math.max(18,Math.round(h*.024));
+  const pp=Math.round(fs*.65);
+  const lh=Math.round(fs*1.55);
+  const bH=lines.length*lh+pp*2;
+  const bY=h-bH;
+
+  ctx.fillStyle='rgba(0,0,0,0.50)';
+  ctx.fillRect(0,bY,w,bH);
+  ctx.fillStyle='#185FA5';
+  ctx.fillRect(0,bY,w,3);
+  ctx.font='bold '+Math.round(fs*1.1)+'px "Courier New",monospace';
+  ctx.fillStyle='#FAC775';
+  ctx.fillText(lines[0],pp,bY+pp+Math.round(fs));
+  ctx.font='bold '+fs+'px "Courier New",monospace';
+  ctx.fillStyle='#a8d5a8';
+  ctx.fillText(lines[1],pp,bY+pp+Math.round(fs)+lh);
+  ctx.font=fs+'px "Courier New",monospace';
+  ctx.fillStyle='#fff';
   for(let i=2;i<lines.length;i++)
-    ctx.fillText(lines[i], pp, bY+pp+Math.round(fs)+i*lh);
- 
-  function doFinish() {
-    // Get base64 from canvas directly — works in ALL environments including WebView
-    showProg('Se aplica EXIF GPS...');
-    try {
-      const dataURL = cnv.toDataURL('image/jpeg', 0.95);
-      // dataURL = "data:image/jpeg;base64,/9j/..."
-      const b64 = dataURL.split(',')[1];
-      // Convert base64 to Uint8Array
-      const binStr = atob(b64);
-      const orig = new Uint8Array(binStr.length);
-      for(let i=0;i<binStr.length;i++) orig[i] = binStr.charCodeAt(i);
- 
-      // Strip existing APP0/APP1
-      let skip = 2;
-      while(skip < orig.length-3 && orig[skip]===0xFF) {
-        const mType = orig[skip+1];
-        if(mType===0xE0||mType===0xE1||mType===0xE2) {
-          const mLen = (orig[skip+2]<<8)|orig[skip+3];
-          skip += 2 + mLen;
-        } else break;
+    ctx.fillText(lines[i],pp,bY+pp+Math.round(fs)+i*lh);
+
+  function doFinish(){
+    showProg('Se aplica EXIF WGS84...');
+    try{
+      // toDataURL funcționează în orice WebView Android
+      const dataURL=cnv.toDataURL('image/jpeg',0.95);
+      const b64=dataURL.split(',')[1];
+      const binStr=atob(b64);
+      const orig=new Uint8Array(binStr.length);
+      for(let i=0;i<binStr.length;i++)orig[i]=binStr.charCodeAt(i);
+
+      // Skip existing APP0/APP1/APP2
+      let skip=2;
+      while(skip<orig.length-3&&orig[skip]===0xFF){
+        const mt=orig[skip+1];
+        if(mt>=0xE0&&mt<=0xEF){const ml=(orig[skip+2]<<8)|orig[skip+3];skip+=2+ml;}
+        else break;
       }
- 
-      const app1 = buildEXIF(dtExif, lat, lon, alt, hdg);
- 
-      // Build new JPEG
-      const out = new Uint8Array(2 + app1.length + orig.length - skip);
-      out[0] = 0xFF; out[1] = 0xD8;
-      out.set(app1, 2);
-      out.set(orig.slice(skip), 2 + app1.length);
- 
-      // Convert back to base64
-      let outBin = '';
-      for(let i=0;i<out.length;i++) outBin += String.fromCharCode(out[i]);
-      lastB64 = btoa(outBin);
- 
+      const app1=buildEXIF(dtExif,lat,lon,alt,hdg);
+      const out=new Uint8Array(2+app1.length+orig.length-skip);
+      out[0]=0xFF;out[1]=0xD8;
+      out.set(app1,2);
+      out.set(orig.slice(skip),2+app1.length);
+
+      // Back to base64
+      let bin='';
+      const chunkSize=8192;
+      for(let i=0;i<out.length;i+=chunkSize){
+        bin+=String.fromCharCode(...out.slice(i,i+chunkSize));
+      }
+      lastB64=btoa(bin);
       showPreview('data:image/jpeg;base64,'+lastB64);
-    } catch(err) {
-      console.error('EXIF err:', err);
-      // fallback: save without EXIF
-      lastB64 = cnv.toDataURL('image/jpeg', 0.95).split(',')[1];
-      toast('Salvat fara EXIF GPS','wn');
+    }catch(err){
+      console.error('EXIF err:',err);
+      lastB64=cnv.toDataURL('image/jpeg',0.95).split(',')[1];
+      toast('EXIF partial','wn');
       showPreview('data:image/jpeg;base64,'+lastB64);
     }
   }
- 
-  if(logoUrl) {
-    const li = new Image();
-    li.onload = function() {
-      const lh2 = Math.round(bH * 0.72);
-      const lw2 = Math.round(lh2 * 2.2);
-      ctx.globalAlpha = 0.88;
-      ctx.drawImage(li, w-lw2-pp, bY+Math.round((bH-lh2)/2), lw2, lh2);
-      ctx.globalAlpha = 1;
+
+  if(logoUrl){
+    const li=new Image();
+    li.onload=function(){
+      const lh2=Math.round(bH*.72);const lw2=Math.round(lh2*2.2);
+      ctx.globalAlpha=0.88;ctx.drawImage(li,w-lw2-pp,bY+Math.round((bH-lh2)/2),lw2,lh2);ctx.globalAlpha=1;
       doFinish();
     };
-    li.onerror = doFinish;
-    li.src = logoUrl;
-  } else {
-    doFinish();
-  }
+    li.onerror=doFinish;li.src=logoUrl;
+  }else{doFinish();}
 }
- 
-function showPreview(dataUrl) {
+
+function showPreview(dataUrl){
   hideProg();
-  document.getElementById('pimg').src = dataUrl;
+  document.getElementById('pimg').src=dataUrl;
   closeCam();
   document.getElementById('prevo').classList.add('show');
 }
- 
-// ── SAVE — funcționează atât pe web cât și pe APK Android ──
-async function saveP() {
-  if(!lastB64) { toast('Nu exista fotografie','er'); return; }
-  showProg('Se salveaza fotografia...');
- 
-  try {
-    if(IS_NATIVE) {
-      // ── Salvare nativa Android prin Capacitor Filesystem ──
-      const { Filesystem, Directory } = window.Capacitor.Plugins;
+
+// ── SAVE — Android nativ + web fallback ──
+async function saveP(){
+  if(!lastB64){toast('Nu exista fotografie','er');return;}
+  showProg('Se salveaza...');
+  try{
+    if(IS_NATIVE){
+      // Capacitor Filesystem — scrie in DCIM/ROPhotoKml
+      const {Filesystem,Directory}=window.Capacitor.Plugins;
       await Filesystem.writeFile({
-        path: 'Pictures/ROPhotoKml/' + lastFname,
-        data: lastB64,
-        directory: Directory.ExternalStorage,
-        recursive: true
+        path:'DCIM/ROPhotoKml/'+lastFname,
+        data:lastB64,
+        directory:Directory.ExternalStorage,
+        recursive:true
       });
-      // Notifica galeria Android sa indexeze poza
-      try {
-        const { Media } = window.Capacitor.Plugins;
-        if(Media) await Media.savePhoto({path: lastFname});
-      } catch(e) { /* Media plugin optional */ }
+      // Scanare media pentru a aparea in Galerie
+      try{
+        await Filesystem.writeFile({
+          path:'Pictures/ROPhotoKml/'+lastFname,
+          data:lastB64,
+          directory:Directory.ExternalStorage,
+          recursive:true
+        });
+      }catch(e2){}
       hideProg();
-      toast('Salvat in Poze: '+lastFname,'ok');
-    } else {
-      // ── Salvare web (browser desktop/Chrome) ──
-      const byteStr = atob(lastB64);
-      const arr = new Uint8Array(byteStr.length);
-      for(let i=0;i<byteStr.length;i++) arr[i] = byteStr.charCodeAt(i);
-      const blob = new Blob([arr], {type:'image/jpeg'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = lastFname; a.style.display='none';
-      document.body.appendChild(a); a.click();
-      setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 2000);
+      toast('Salvat in Galerie: '+lastFname,'ok');
+    }else{
+      // Browser web — download
+      const bin=atob(lastB64);
+      const arr=new Uint8Array(bin.length);
+      for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
+      const blob=new Blob([arr],{type:'image/jpeg'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url;a.download=lastFname;a.style.display='none';
+      document.body.appendChild(a);a.click();
+      setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},2000);
       hideProg();
       toast('Descarcat: '+lastFname,'ok');
     }
     pCnt++;
-    // Adauga in galeria sesiunii
-    gallery.push({b64:lastB64, name:lastFname, url:'data:image/jpeg;base64,'+lastB64});
-    const b=document.getElementById('pbg'); b.style.display='block'; b.textContent=pCnt+' foto';
+    gallery.push({b64:lastB64,name:lastFname});
+    const b=document.getElementById('pbg');b.style.display='block';b.textContent=pCnt+' foto';
     document.getElementById('prevo').classList.remove('show');
-  } catch(err) {
+  }catch(err){
     hideProg();
-    console.error('Save error:', err);
-    toast('Eroare salvare: '+err.message,'er');
+    console.error('Save err:',err);
+    // Fallback: incearca download chiar pe Android
+    try{
+      const bin=atob(lastB64);const arr=new Uint8Array(bin.length);
+      for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
+      const blob=new Blob([arr],{type:'image/jpeg'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');a.href=url;a.download=lastFname;
+      document.body.appendChild(a);a.click();
+      setTimeout(()=>document.body.removeChild(a),2000);
+      pCnt++;gallery.push({b64:lastB64,name:lastFname});
+      const b=document.getElementById('pbg');b.style.display='block';b.textContent=pCnt+' foto';
+      document.getElementById('prevo').classList.remove('show');
+      hideProg();toast('Salvat (fallback)','ok');
+    }catch(e2){toast('Eroare: '+err.message,'er');}
   }
 }
- 
-function discardP() {
-  document.getElementById('prevo').classList.remove('show');
-  document.getElementById('camo').classList.add('show');
-}
-function openGallery() {
-  const g=document.getElementById('galg'); g.innerHTML='';
-  if(!gallery.length) {
-    g.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:11px">Nu exista fotografii in aceasta sesiune.</div>';
-  } else {
+function discardP(){document.getElementById('prevo').classList.remove('show');document.getElementById('camo').classList.add('show');}
+
+// ── GALLERY ──
+function openGallery(){
+  const g=document.getElementById('galg');g.innerHTML='';
+  if(!gallery.length){
+    g.innerHTML='<div style="grid-column:1/-1;padding:40px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:11px">Nu exista fotografii in aceasta sesiune.</div>';
+  }else{
     gallery.forEach((p,i)=>{
-      const d=document.createElement('div'); d.className='gt';
-      d.innerHTML='<img src="'+p.url+'" onclick="viewFull('+i+')">'
-        +'<button class="gd" onclick="delPhoto('+i+')">✕</button>';
+      const d=document.createElement('div');d.className='gt';
+      d.innerHTML='<img src="data:image/jpeg;base64,'+p.b64+'" onclick="openFull('+i+')" loading="lazy">'
+        +'<button class="gd" onclick="delPhoto('+i+')">✕</button>'
+        +'<div class="gname">'+ex(p.name)+'</div>';
       g.appendChild(d);
     });
   }
   document.getElementById('galo').classList.add('show');
 }
-function viewFull(i) {
-  const w=window.open('','_blank');
-  w.document.write('<img src="'+gallery[i].url+'" style="max-width:100%;height:auto">');
-}
 function closeGallery(){document.getElementById('galo').classList.remove('show');}
-function delPhoto(i){if(!confirm('Stergi?'))return;gallery.splice(i,1);openGallery();}
+function openFull(i){
+  document.getElementById('fullimg').src='data:image/jpeg;base64,'+gallery[i].b64;
+  document.getElementById('fvname').textContent=gallery[i].name;
+  document.getElementById('fullview').classList.add('show');
+}
+function closeFull(){document.getElementById('fullview').classList.remove('show');}
+function delPhoto(i){
+  if(!confirm('Stergi fotografia "'+gallery[i].name+'"?'))return;
+  gallery.splice(i,1);openGallery();
+}
+
 function centerMap(){if(lat)map.setView([lat,lon],18);else toast('Activeaza GPS','wn');}
 function showProg(msg){document.getElementById('prog-txt').textContent=msg;document.getElementById('prog').classList.add('show');}
 function hideProg(){document.getElementById('prog').classList.remove('show');}
