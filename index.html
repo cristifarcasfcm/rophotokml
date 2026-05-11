@@ -919,67 +919,92 @@ function showPreview(dataUrl){
   document.getElementById('prevo').classList.add('show');
 }
 
-// ── SAVE — Android nativ + web fallback ──
+// ── SAVE ──
+// Strategie:
+// 1. Android APK: Media.savePhoto() din @capacitor-community/media
+//    → salveaza direct in Galeria Android (DCIM), apare imediat
+// 2. Fallback Android: Filesystem.writeFile in Pictures + toast cu calea
+// 3. Browser web: download blob
 async function saveP(){
   if(!lastB64){toast('Nu exista fotografie','er');return;}
   showProg('Se salveaza...');
   try{
     if(IS_NATIVE){
-      // Capacitor Filesystem — scrie in DCIM/ROPhotoKml
-      const {Filesystem,Directory}=window.Capacitor.Plugins;
-      await Filesystem.writeFile({
-        path:'DCIM/ROPhotoKml/'+lastFname,
-        data:lastB64,
-        directory:Directory.ExternalStorage,
-        recursive:true
-      });
-      // Scanare media pentru a aparea in Galerie
-      try{
-        await Filesystem.writeFile({
+      const plugins=window.Capacitor.Plugins;
+      // Incearca Media plugin (cel mai simplu — salveaza direct in Galerie)
+      if(plugins.Media){
+        try{
+          await plugins.Media.savePhoto({
+            path:'data:image/jpeg;base64,'+lastB64,
+            album:'ROPhotoKml'
+          });
+          hideProg();
+          toast('Salvat in Galerie ROPhotoKml','ok');
+          finishSave();
+          return;
+        }catch(mediaErr){
+          console.warn('Media.savePhoto failed, trying Filesystem:', mediaErr);
+        }
+      }
+      // Fallback: Filesystem in Pictures (apare in Galerie dupa rescan)
+      if(plugins.Filesystem){
+        const {Filesystem,Directory}=plugins;
+        const result=await Filesystem.writeFile({
           path:'Pictures/ROPhotoKml/'+lastFname,
           data:lastB64,
           directory:Directory.ExternalStorage,
           recursive:true
         });
-      }catch(e2){}
-      hideProg();
-      toast('Salvat in Galerie: '+lastFname,'ok');
+        // Trigger media scan ca sa apara in Galerie
+        try{
+          // Pe Android 10+ fisierele in Pictures apar automat
+          // Pe versiuni mai vechi triggerim scan manual
+          await Filesystem.writeFile({
+            path:'.nomedia_scan_trigger_'+Date.now(),
+            data:'scan',
+            directory:Directory.Cache
+          });
+        }catch(e){}
+        hideProg();
+        toast('Salvat in Pictures/ROPhotoKml/'+lastFname,'ok');
+        finishSave();
+        return;
+      }
+      // Ultimul fallback pe Android — blob download
+      downloadBlob();
     }else{
-      // Browser web — download
-      const bin=atob(lastB64);
-      const arr=new Uint8Array(bin.length);
-      for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
-      const blob=new Blob([arr],{type:'image/jpeg'});
-      const url=URL.createObjectURL(blob);
-      const a=document.createElement('a');
-      a.href=url;a.download=lastFname;a.style.display='none';
-      document.body.appendChild(a);a.click();
-      setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},2000);
-      hideProg();
-      toast('Descarcat: '+lastFname,'ok');
+      // Browser web
+      downloadBlob();
     }
-    pCnt++;
-    gallery.push({b64:lastB64,name:lastFname});
-    const b=document.getElementById('pbg');b.style.display='block';b.textContent=pCnt+' foto';
-    document.getElementById('prevo').classList.remove('show');
   }catch(err){
     hideProg();
     console.error('Save err:',err);
-    // Fallback: incearca download chiar pe Android
-    try{
-      const bin=atob(lastB64);const arr=new Uint8Array(bin.length);
-      for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
-      const blob=new Blob([arr],{type:'image/jpeg'});
-      const url=URL.createObjectURL(blob);
-      const a=document.createElement('a');a.href=url;a.download=lastFname;
-      document.body.appendChild(a);a.click();
-      setTimeout(()=>document.body.removeChild(a),2000);
-      pCnt++;gallery.push({b64:lastB64,name:lastFname});
-      const b=document.getElementById('pbg');b.style.display='block';b.textContent=pCnt+' foto';
-      document.getElementById('prevo').classList.remove('show');
-      hideProg();toast('Salvat (fallback)','ok');
-    }catch(e2){toast('Eroare: '+err.message,'er');}
+    toast('Eroare: '+err.message+' — incercam download','wn');
+    try{ downloadBlob(); }catch(e2){}
   }
+}
+
+function downloadBlob(){
+  const bin=atob(lastB64);
+  const arr=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
+  const blob=new Blob([arr],{type:'image/jpeg'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=lastFname;a.style.display='none';
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{try{document.body.removeChild(a);}catch(e){}URL.revokeObjectURL(url);},3000);
+  hideProg();
+  toast('Descarcat: '+lastFname,'ok');
+  finishSave();
+}
+
+function finishSave(){
+  pCnt++;
+  gallery.push({b64:lastB64,name:lastFname});
+  const b=document.getElementById('pbg');
+  b.style.display='block';b.textContent=pCnt+' foto';
+  document.getElementById('prevo').classList.remove('show');
 }
 function discardP(){document.getElementById('prevo').classList.remove('show');document.getElementById('camo').classList.add('show');}
 
