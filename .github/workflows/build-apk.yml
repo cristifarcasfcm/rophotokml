@@ -41,6 +41,27 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
+      - name: Register Media plugin in MainActivity
+        run: |
+          MA="android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+          cat > "$MA" << 'JAVA'
+          package ro.rophotokml.app;
+          import android.os.Bundle;
+          import com.getcapacitor.BridgeActivity;
+          import com.getcapacitor.Plugin;
+          import com.capacitorjs.plugins.filesystem.FilesystemPlugin;
+          import com.capacitorcommunityplugins.media.MediaPlugin;
+          import java.util.ArrayList;
+          public class MainActivity extends BridgeActivity {
+            @Override
+            public void onCreate(Bundle savedInstanceState) {
+              registerPlugin(FilesystemPlugin.class);
+              registerPlugin(MediaPlugin.class);
+              super.onCreate(savedInstanceState);
+            }
+          }
+          JAVA
+
       - name: Add permissions to AndroidManifest
         run: |
           M="android/app/src/main/AndroidManifest.xml"
