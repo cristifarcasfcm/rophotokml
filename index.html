@@ -143,10 +143,10 @@ html,body{height:100%;overflow:hidden;background:#0d1a0d;color:var(--txt);font-f
 #camo.show{display:flex}
 #vwr{position:relative;flex:1;overflow:hidden;background:#000}
 #vid{width:100%;height:100%;object-fit:cover;display:block}
-#vst{position:absolute;bottom:0;left:0;right:0;
-  background:rgba(0,0,0,.50);padding:8px 11px;
+#vst{position:absolute;bottom:0;left:0;width:55%;
+  background:rgba(0,0,0,.50);padding:8px 10px;
   font-family:var(--mono);font-size:11px;line-height:1.75;color:#fff;
-  border-top:3px solid #185FA5;pointer-events:none}
+  border-top:3px solid #185FA5;pointer-events:none;word-break:break-word}
 #vst .vi{font-size:13px;font-weight:700;color:#FAC775}
 #vst .vk{color:#a8d5a8;font-weight:600;font-size:11px}
 #logov{position:absolute;bottom:10px;right:10px;max-width:90px;max-height:54px;
@@ -828,39 +828,79 @@ function doCapture(){
 
   const pid=(curF&&selField&&curF[selField])?
     String(curF[selField]).replace(/[^a-zA-Z0-9_\-]/g,'_').substring(0,40):'parcela';
-  lastFname='ROPhotoKml_'+pid+'_'+now.getFullYear()+pd(now.getMonth()+1)+pd(now.getDate())+
+  lastFname=pid+'_'+now.getFullYear()+pd(now.getMonth()+1)+pd(now.getDate())+
     '_'+pd(now.getHours())+pd(now.getMinutes())+pd(now.getSeconds())+'.jpg';
 
   const lines=[
     curF?lbl(curF):'— Parcela neselectata —',
     'KML: '+kmlName,
-    lat?'Lat: '+lat.toFixed(6)+'   Lon: '+lon.toFixed(6):'Lat: —   Lon: —',
+    lat?'Lat: '+lat.toFixed(6)+'  Lon: '+lon.toFixed(6):'Lat: —  Lon: —',
     'Acc: '+(acc?acc.toFixed(1)+' m':'—')+
       '  Alt: '+(alt!=null?alt.toFixed(1)+' m':'—')+
-      '  Azimut: '+(hdg!=null?hdg+'° '+cdir(hdg):'—'),
+      '  Az: '+(hdg!=null?hdg+'° '+cdir(hdg):'—'),
     ts
   ];
 
   const fs=Math.max(18,Math.round(h*.024));
   const pp=Math.round(fs*.65);
   const lh=Math.round(fs*1.55);
-  const bH=lines.length*lh+pp*2;
+
+  // Functie care imparte textul pe randuri astfel incat sa incapa in maxW
+  function wrapText(text, maxW){
+    const words=text.split(' ');
+    const rows=[];
+    let row='';
+    for(const w of words){
+      const test=row?row+' '+w:w;
+      if(ctx.measureText(test).width<=maxW){ row=test; }
+      else { if(row)rows.push(row); row=w; }
+    }
+    if(row)rows.push(row);
+    return rows.length?rows:[text];
+  }
+
+  // Latime chenar = 55% din latime imaginii
+  const bW=Math.round(w*0.55);
+  const maxTxtW=bW-pp*2;
+
+  // Pre-calculeaza toate randurile pentru fiecare linie
+  ctx.font='bold '+Math.round(fs*1.1)+'px "Courier New",monospace';
+  const rows0=wrapText(lines[0],maxTxtW);
+  ctx.font='bold '+fs+'px "Courier New",monospace';
+  const rows1=wrapText(lines[1],maxTxtW);
+  ctx.font=fs+'px "Courier New",monospace';
+  const rows2=wrapText(lines[2],maxTxtW);
+  const rows3=wrapText(lines[3],maxTxtW);
+  const rows4=wrapText(lines[4],maxTxtW);
+
+  const allRows=[
+    {rows:rows0, color:'#FAC775',  bold:true,  size:Math.round(fs*1.1)},
+    {rows:rows1, color:'#a8d5a8',  bold:true,  size:fs},
+    {rows:rows2, color:'#ffffff',  bold:false, size:fs},
+    {rows:rows3, color:'#ffffff',  bold:false, size:fs},
+    {rows:rows4, color:'#ffffff',  bold:false, size:fs},
+  ];
+
+  const totalRows=allRows.reduce((s,g)=>s+g.rows.length,0);
+  const bH=totalRows*lh+pp*2;
   const bY=h-bH;
 
+  // Fundal semi-transparent stanga
   ctx.fillStyle='rgba(0,0,0,0.50)';
-  ctx.fillRect(0,bY,w,bH);
+  ctx.fillRect(0,bY,bW,bH);
   ctx.fillStyle='#185FA5';
-  ctx.fillRect(0,bY,w,3);
-  ctx.font='bold '+Math.round(fs*1.1)+'px "Courier New",monospace';
-  ctx.fillStyle='#FAC775';
-  ctx.fillText(lines[0],pp,bY+pp+Math.round(fs));
-  ctx.font='bold '+fs+'px "Courier New",monospace';
-  ctx.fillStyle='#a8d5a8';
-  ctx.fillText(lines[1],pp,bY+pp+Math.round(fs)+lh);
-  ctx.font=fs+'px "Courier New",monospace';
-  ctx.fillStyle='#fff';
-  for(let i=2;i<lines.length;i++)
-    ctx.fillText(lines[i],pp,bY+pp+Math.round(fs)+i*lh);
+  ctx.fillRect(0,bY,bW,3);
+
+  // Deseneaza fiecare rand
+  let curY=bY+pp+Math.round(fs);
+  for(const group of allRows){
+    ctx.font=(group.bold?'bold ':'')+group.size+'px "Courier New",monospace';
+    ctx.fillStyle=group.color;
+    for(const row of group.rows){
+      ctx.fillText(row,pp,curY);
+      curY+=lh;
+    }
+  }
 
   function doFinish(){
     showProg('Se aplica EXIF WGS84...');
