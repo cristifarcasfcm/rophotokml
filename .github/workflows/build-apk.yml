@@ -31,12 +31,9 @@ jobs:
       run: npx cap add android
     - name: Sync Capacitor
       run: npx cap sync android
-    - name: Patch MainActivity
-      run: python3 -c "ma='android/app/src/main/java/ro/rophotokml/app/MainActivity.java';code='package
-        ro.rophotokml.app;\nimport android.os.Bundle;\nimport com.getcapacitor.BridgeActivity;\nimport
-        com.getcapacitor.community.media.MediaPlugin;\nimport com.capacitorjs.plugins.filesystem.FilesystemPlugin;\npublic
-        class MainActivity extends BridgeActivity {\n  @Override\n  public void onCreate(Bundle
-        savedInstanceState) {\n    registerPlugin(FilesystemPlugin.class);\n    registerPlugin(MediaPlugin.class);\n    super.onCreate(savedInstanceState);\n  }\n}';open(ma,'w').write(code);print('patched')"
+    - name: Copy custom MainActivity
+      run: cp MainActivity.java android/app/src/main/java/ro/rophotokml/app/MainActivity.java
+        && echo "MainActivity copied"
     - name: Add permissions to AndroidManifest
       run: 'M="android/app/src/main/AndroidManifest.xml"
 
