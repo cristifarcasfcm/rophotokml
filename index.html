@@ -262,14 +262,99 @@ input[type=file]{display:none}
 .qp-btn.done-active{border-color:var(--g);background:rgba(34,197,94,.2);color:var(--g)}
 .qp-btn.qp-close{border-color:rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:var(--muted)}
 
-/* ZOOM BUTTONS */
-#zoom-row{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
-  display:flex;gap:6px;z-index:10}
-.zoom-btn{padding:5px 10px;border-radius:20px;border:1px solid rgba(255,255,255,.35);
-  background:rgba(0,0,0,.55);color:#fff;font-size:12px;font-family:var(--mono);
-  cursor:pointer;transition:all .2s;backdrop-filter:blur(4px)}
-.zoom-btn:active{transform:scale(.92)}
-.zoom-btn.active{border-color:var(--g);background:rgba(34,197,94,.3);color:var(--g)}
+/* ZOOM SLIDER */
+#zoom-slider-wrap{position:absolute;right:10px;top:50%;transform:translateY(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:6px;z-index:10}
+#zoom-val{font-family:var(--mono);font-size:11px;color:#fff;
+  background:rgba(0,0,0,.6);padding:2px 6px;border-radius:8px;min-width:32px;text-align:center}
+#zoom-slider{
+  -webkit-appearance:slider-vertical;appearance:slider-vertical;
+  writing-mode:vertical-lr;direction:rtl;
+  width:28px;height:160px;
+  accent-color:var(--g);cursor:pointer;
+  background:transparent;
+}
+
+/* SPLASH */
+#splash{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;
+  background:#0d1a0d;flex-direction:column}
+#splash-bg{position:absolute;inset:0;background:
+  radial-gradient(ellipse at 30% 60%, rgba(34,197,94,.08) 0%, transparent 60%),
+  radial-gradient(ellipse at 70% 40%, rgba(24,95,165,.06) 0%, transparent 60%),
+  linear-gradient(to bottom, #0a1a0a 0%, #0d2010 50%, #0a1a0a 100%);
+  z-index:0}
+/* SVG landscape generata prin CSS */
+#splash-bg::after{content:'';position:absolute;bottom:0;left:0;right:0;height:55%;
+  background:
+    /* Munti fundal */
+    linear-gradient(135deg, transparent 45%, #0f2a0f 45%),
+    linear-gradient(225deg, transparent 40%, #112a11 40%),
+    /* Pasuni */
+    linear-gradient(to top, #1a3a0f 0%, #1e4510 15%, transparent 40%);
+  z-index:1}
+#splash-content{position:relative;z-index:10;text-align:center;width:100%;padding:0 20px}
+#splash-title{font-family:var(--mono);font-size:28px;font-weight:700;color:var(--g);
+  letter-spacing:.15em;text-shadow:0 0 20px var(--glow);margin-bottom:6px}
+#splash-sub{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.1em;margin-bottom:40px}
+
+/* Obiectiv foto - loading indicator */
+#splash-lens{position:relative;width:120px;height:120px;margin:0 auto 20px;
+  display:flex;align-items:center;justify-content:center}
+#splash-ring1{position:absolute;inset:0;border-radius:50%;border:3px solid rgba(34,197,94,.15)}
+#splash-ring2{position:absolute;inset:8px;border-radius:50%;border:2px solid rgba(34,197,94,.25)}
+#splash-ring3{position:absolute;inset:18px;border-radius:50%;border:2px solid rgba(34,197,94,.35);
+  background:radial-gradient(circle, rgba(34,197,94,.1) 0%, rgba(0,0,0,.5) 100%)}
+#splash-bar-wrap{position:absolute;bottom:-28px;left:50%;transform:translateX(-50%);
+  width:120px;height:4px;background:rgba(34,197,94,.15);border-radius:2px;overflow:hidden}
+#splash-bar{height:100%;width:0%;background:var(--g);border-radius:2px;
+  box-shadow:0 0 8px var(--glow);transition:width .05s linear}
+#splash-pct{position:absolute;bottom:-48px;left:50%;transform:translateX(-50%);
+  font-family:var(--mono);font-size:11px;color:var(--g)}
+
+/* Jeep + inspector SVG */
+#splash-scene{position:absolute;bottom:15%;left:50%;transform:translateX(-50%);
+  width:260px;height:100px;z-index:2}
+
+/* KML MANAGER */
+#kml-manager-overlay{position:fixed;inset:0;z-index:590;background:rgba(0,0,0,.6);display:none}
+#kml-manager-overlay.show{display:block}
+#kml-manager{position:fixed;bottom:0;left:0;right:0;z-index:600;
+  background:rgba(6,16,6,.98);border-top:2px solid var(--bord);border-radius:16px 16px 0 0;
+  max-height:70vh;display:none;flex-direction:column;
+  box-shadow:0 -4px 20px rgba(0,0,0,.5)}
+#kml-manager.show{display:flex}
+#km-head{padding:12px 14px;border-bottom:1px solid var(--bord);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+#km-head h2{font-family:var(--mono);font-size:13px;color:var(--g)}
+#km-head button{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer}
+#km-body{flex:1;overflow-y:auto;padding:10px 12px}
+#km-list{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.km-item{display:flex;align-items:center;gap:8px;padding:10px 12px;
+  border-radius:10px;border:1px solid var(--bord);background:rgba(34,197,94,.05);cursor:pointer}
+.km-item.active{border-color:var(--g);background:rgba(34,197,94,.15)}
+.km-item-info{flex:1;min-width:0}
+.km-item-name{font-family:var(--mono);font-size:12px;color:var(--g);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.km-item-stats{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:2px}
+.km-item-del{width:28px;height:28px;border-radius:50%;background:rgba(153,27,27,.3);
+  border:1px solid rgba(239,68,68,.3);color:#ef4444;font-size:14px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.km-add-btn{display:flex;align-items:center;gap:8px;padding:11px 14px;
+  border-radius:10px;border:1px dashed var(--bord);background:transparent;
+  color:var(--muted);font-size:13px;cursor:pointer;width:100%;justify-content:center}
+.km-add-btn:active{background:rgba(34,197,94,.08)}
+
+/* REMAIN POPUP */
+#remain-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  z-index:700;background:rgba(6,16,6,.98);border:1px solid var(--bord);
+  border-radius:14px;padding:20px 22px;text-align:center;width:80%;max-width:300px;
+  display:none;box-shadow:0 8px 32px rgba(0,0,0,.7)}
+#remain-popup.show{display:block}
+#remain-icon{font-size:32px;margin-bottom:8px}
+#remain-text{font-family:var(--mono);font-size:13px;color:var(--txt);
+  margin-bottom:14px;line-height:1.6}
+#remain-popup button{padding:8px 20px;border-radius:8px;border:1px solid var(--g);
+  background:rgba(34,197,94,.15);color:var(--g);font-size:13px;cursor:pointer;font-family:var(--mono)}
 
 .leaflet-popup-content-wrapper{background:rgba(8,18,8,.97)!important;color:var(--txt)!important;
   border:1px solid var(--bord)!important;border-radius:8px!important;font-family:var(--mono);font-size:11px!important}
@@ -315,7 +400,7 @@ input[type=file]{display:none}
 </div>
 <div id="sidebar">
   <div style="display:flex;flex-direction:column;align-items:center;gap:1px">
-    <button class="sb" onclick="document.getElementById('upl').style.display='flex'">
+    <button class="sb" onclick="openKmlManager()">
       <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9,15 12,12 15,15"/></svg>
       <span class="sl">KML</span>
     </button>
@@ -412,12 +497,12 @@ input[type=file]{display:none}
     </div>
     <img id="logov" alt="logo">
     <button id="bcc" onclick="closeCam()">✕</button>
-    <!-- Zoom butoane -->
-    <div id="zoom-row">
-      <button class="zoom-btn" id="zbtn-uw" onclick="setZoom('ultrawide')" title="Ultrawide">0.6×</button>
-      <button class="zoom-btn" id="zbtn-w" onclick="setZoom('wide')" title="Wide">1×</button>
-      <button class="zoom-btn active" id="zbtn-n" onclick="setZoom('normal')" title="Normal">2×</button>
-      <button class="zoom-btn" id="zbtn-t" onclick="setZoom('tele')" title="Tele">5×</button>
+    <!-- Zoom slider dreapta -->
+    <div id="zoom-slider-wrap">
+      <span id="zoom-val">1×</span>
+      <input type="range" id="zoom-slider" min="1" max="10" step="0.1" value="1"
+        oninput="onZoomSlider(this.value)" orient="vertical">
+      <span style="font-size:9px;color:rgba(255,255,255,.5)">−</span>
     </div>
   </div>
   <div id="csr"><button id="csb" onclick="doCapture()"><div id="csd"></div></button></div>
@@ -449,15 +534,57 @@ input[type=file]{display:none}
   <button id="fvclose" onclick="closeFull()">✕</button>
   <div id="fvname"></div>
 </div>
-<div id="upl">
+<!-- SPLASH SCREEN -->
+<div id="splash">
+  <div id="splash-bg"></div>
+  <div id="splash-content">
+    <div id="splash-title">ROPhotoKml</div>
+    <div id="splash-sub">Inspector Teren · GPS · KML</div>
+    <div id="splash-lens">
+      <div id="splash-ring1"></div>
+      <div id="splash-ring2"></div>
+      <div id="splash-ring3"></div>
+      <div id="splash-bar-wrap">
+        <div id="splash-bar"></div>
+      </div>
+      <div id="splash-pct">0%</div>
+    </div>
+  </div>
+</div>
+
+<!-- KML MANAGER -->
+<div id="kml-manager">
+  <div id="km-head">
+    <h2>Fisiere KML</h2>
+    <button onclick="closeKmlManager()">✕</button>
+  </div>
+  <div id="km-body">
+    <div id="km-list"></div>
+    <label class="km-add-btn" for="kf">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Adauga KML nou
+    </label>
+    <input type="file" id="kf" accept=".kml" onchange="addKML(this)" multiple>
+  </div>
+</div>
+<div id="kml-manager-overlay" onclick="closeKmlManager()"></div>
+
+<!-- MESAJ PARCELE RAMASE -->
+<div id="remain-popup">
+  <div id="remain-icon">📋</div>
+  <div id="remain-text"></div>
+  <button onclick="document.getElementById('remain-popup').classList.remove('show')">OK</button>
+</div>
+
+<div id="upl" style="display:none">
   <div id="upb">
     <h2>ROPhotoKml</h2>
     <p>Incarca fisierul KML cu parcelele.<br>GPS hardware — fara date GSM.</p>
-    <label class="ub" for="kf">
+    <label class="ub" for="kf2">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       Selecteaza .kml
     </label>
-    <input type="file" id="kf" accept=".kml" onchange="loadKML(this)">
+    <input type="file" id="kf2" accept=".kml" onchange="loadKMLLegacy(this)">
     <br><button id="usk" onclick="document.getElementById('upl').style.display='none'">Inchide</button>
   </div>
 </div>
@@ -471,6 +598,11 @@ input[type=file]{display:none}
 // ── Detectare mediu ──
 const IS_NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
 
+// ── KML STORE (multiple KML) ──
+// kmlStore: [{id, name, xml, feats, doneSet}]
+let kmlStore = [];
+let activeKmlId = null;
+
 // ── STATE ──
 let map,uMk,aCir,bufL=[];
 let polyL=[];
@@ -483,6 +615,69 @@ let lastB64=null,lastFname='',pCnt=0;
 let mStream=null,isSat=true;
 let logoUrl=null;
 let gallery=[];
+let currentZoomLevel=1.0;
+
+// ── PERSISTENTA LocalStorage ──
+const LS_KEY='rophotokml_state';
+
+function saveState(){
+  try{
+    const data={
+      kmlStore: kmlStore.map(k=>({
+        id:k.id, name:k.name, xml:k.xml,
+        doneIds: k.feats ? k.feats.filter(f=>f._done).map(f=>f['__nm__']||f[Object.keys(f).find(k=>!k.startsWith('_'))]||'').filter(Boolean) : []
+      })),
+      activeKmlId,
+      gallery: gallery.map(g=>({name:g.name})) // salvam doar numele, nu base64
+    };
+    localStorage.setItem(LS_KEY, JSON.stringify(data));
+  }catch(e){console.warn('saveState err:',e);}
+}
+
+function loadState(){
+  try{
+    const raw=localStorage.getItem(LS_KEY);
+    if(!raw)return;
+    const data=JSON.parse(raw);
+    if(data.kmlStore&&data.kmlStore.length){
+      data.kmlStore.forEach(k=>{
+        if(kmlStore.find(x=>x.id===k.id))return;
+        const entry={id:k.id,name:k.name,xml:k.xml,feats:null,doneIds:k.doneIds||[]};
+        kmlStore.push(entry);
+      });
+    }
+    if(data.activeKmlId){
+      activeKmlId=data.activeKmlId;
+      const k=kmlStore.find(x=>x.id===activeKmlId);
+      if(k){
+        parseAndActivateKML(k, false);
+      }
+    }
+  }catch(e){console.warn('loadState err:',e);}
+}
+
+// ── SPLASH SCREEN ──
+function runSplash(){
+  const bar=document.getElementById('splash-bar');
+  const pct=document.getElementById('splash-pct');
+  const splash=document.getElementById('splash');
+  let p=0;
+  const iv=setInterval(()=>{
+    p+=Math.random()*4+1.5;
+    if(p>=100){p=100;clearInterval(iv);
+      bar.style.width='100%';pct.textContent='100%';
+      setTimeout(()=>{
+        splash.style.transition='opacity 0.5s';
+        splash.style.opacity='0';
+        setTimeout(()=>{splash.style.display='none';loadState();},500);
+      },400);
+    }
+    bar.style.width=Math.min(p,100)+'%';
+    pct.textContent=Math.round(Math.min(p,100))+'%';
+  },50);
+}
+// Porneste splash la incarcarea paginii
+window.addEventListener('load',()=>setTimeout(runSplash,100));
 
 // ── MAP ──
 map=L.map('map',{center:[47.65,23.58],zoom:13,zoomControl:false,attributionControl:false});
@@ -518,19 +713,138 @@ function mkPin(){
   });
 }
 
-// ── KML ──
+// ── KML MANAGER ──
+function openKmlManager(){
+  renderKmlList();
+  document.getElementById('kml-manager').classList.add('show');
+  document.getElementById('kml-manager-overlay').classList.add('show');
+}
+function closeKmlManager(){
+  document.getElementById('kml-manager').classList.remove('show');
+  document.getElementById('kml-manager-overlay').classList.remove('show');
+}
+
+function renderKmlList(){
+  const list=document.getElementById('km-list');
+  list.innerHTML='';
+  if(!kmlStore.length){
+    list.innerHTML='<div style="text-align:center;color:var(--muted);font-family:var(--mono);font-size:11px;padding:20px">Niciun KML incarcat</div>';
+    return;
+  }
+  kmlStore.forEach(k=>{
+    const total=k.feats?k.feats.length:0;
+    const done=k.feats?k.feats.filter(f=>f._done).length:0;
+    const isActive=k.id===activeKmlId;
+    const div=document.createElement('div');
+    div.className='km-item'+(isActive?' active':'');
+    div.innerHTML=
+      '<div class="km-item-info" onclick="activateKML(\''+k.id+'\')">'
+        +'<div class="km-item-name">'+ex(k.name)+'</div>'
+        +'<div class="km-item-stats">'+total+' parcele · '+done+' finalizate · '+(total-done)+' ramase</div>'
+      +'</div>'
+      +'<button class="km-item-del" onclick="deleteKML(\''+k.id+'\')" title="Sterge">✕</button>';
+    list.appendChild(div);
+  });
+}
+
+function addKML(inp){
+  const files=Array.from(inp.files);
+  files.forEach(file=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      const id='kml_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+      const name=file.name.replace(/\.kml$/i,'');
+      const entry={id,name,xml:e.target.result,feats:null,doneIds:[]};
+      kmlStore.push(entry);
+      saveState();
+      renderKmlList();
+      // Auto-activeaza daca e primul
+      if(kmlStore.length===1)activateKML(id);
+      toast('KML adaugat: '+name,'ok');
+    };
+    r.readAsText(file);
+  });
+  inp.value='';
+}
+
+function activateKML(id){
+  const k=kmlStore.find(x=>x.id===id);
+  if(!k)return;
+  activeKmlId=id;
+  parseAndActivateKML(k, true);
+  closeKmlManager();
+  saveState();
+}
+
+function deleteKML(id){
+  if(!confirm('Stergi acest KML?'))return;
+  kmlStore=kmlStore.filter(x=>x.id!==id);
+  if(activeKmlId===id){
+    activeKmlId=kmlStore.length?kmlStore[0].id:null;
+    if(activeKmlId)parseAndActivateKML(kmlStore[0],true);
+    else{feats=[];kmlName='';drawAll();}
+  }
+  saveState();
+  renderKmlList();
+  toast('KML sters','ok');
+}
+
+function parseAndActivateKML(k, showRemain){
+  // Parse XML daca nu e inca parsat
+  if(!k.feats){
+    k.feats=parseKMLXml(k.xml, k.doneIds||[]);
+  }
+  // Restore done state
+  if(k.doneIds&&k.doneIds.length){
+    k.feats.forEach(f=>{
+      const fid=f['__nm__']||f[Object.keys(f).find(key=>!key.startsWith('_'))]||'';
+      if(k.doneIds.includes(fid))f._done=true;
+    });
+  }
+  feats=k.feats;
+  kmlName=k.name;
+  allF=k._allF||[];
+  buildFS();
+  drawAll();fitAll();
+  // Salveaza allF
+  k._allF=allF;
+
+  if(showRemain){
+    const total=feats.length;
+    const done=feats.filter(f=>f._done).length;
+    const remain=total-done;
+    const el=document.getElementById('remain-popup');
+    document.getElementById('remain-icon').textContent=remain===0?'✅':'📋';
+    document.getElementById('remain-text').textContent=
+      remain===0
+        ? 'Toate '+total+' parcele sunt finalizate!'
+        : 'Mai aveti '+remain+' parcele de finalizat\ndin total '+total;
+    el.classList.add('show');
+    setTimeout(()=>el.classList.remove('show'),5000);
+  }
+  toast('KML activ: '+k.name+' ('+feats.length+' parcele)','ok');
+}
+
 function loadKML(inp){
+  // Legacy - nu mai e folosit direct
   const f=inp.files[0];if(!f)return;
-  kmlName=f.name.replace(/\.kml$/i,'');
   const r=new FileReader();
-  r.onload=e=>{parseKML(e.target.result);document.getElementById('upl').style.display='none';};
+  r.onload=e=>{
+    const id='kml_'+Date.now();
+    const name=f.name.replace(/\.kml$/i,'');
+    const entry={id,name,xml:e.target.result,feats:null,doneIds:[]};
+    kmlStore.push(entry);
+    activateKML(id);
+  };
   r.readAsText(f);
 }
-function parseKML(xml){
+function loadKMLLegacy(inp){loadKML(inp);}
+
+function parseKMLXml(xml, doneIds){
   const doc=new DOMParser().parseFromString(xml,'text/xml');
-  feats=[];const fs=new Set();
+  const parsed=[];const fs=new Set();
   doc.querySelectorAll('Placemark').forEach(pm=>{
-    const f={_c:[],_ctr:null};
+    const f={_c:[],_ctr:null,_done:false};
     pm.querySelectorAll('SimpleData').forEach(sd=>{const n=sd.getAttribute('name');f[n]=sd.textContent.trim();fs.add(n);});
     pm.querySelectorAll('Data').forEach(d=>{const n=d.getAttribute('name');const v=d.querySelector('value');if(v){f[n]=v.textContent.trim();fs.add(n);}});
     const ne=pm.querySelector('name');if(ne){f['__nm__']=ne.textContent.trim();fs.add('__nm__');}
@@ -543,10 +857,10 @@ function parseKML(xml){
     f._c=cs;
     if(cs.length){const las=cs.map(c=>c[0]),los=cs.map(c=>c[1]);
       f._ctr=[(Math.min(...las)+Math.max(...las))/2,(Math.min(...los)+Math.max(...los))/2];}
-    feats.push(f);
+    parsed.push(f);
   });
-  allF=Array.from(fs);buildFS();drawAll();fitAll();
-  toast('KML: '+feats.length+' parcele','ok');
+  allF=Array.from(fs);
+  return parsed;
 }
 function buildFS(){
   const s=document.getElementById('pcfs');s.innerHTML='';
@@ -664,6 +978,12 @@ function toggleDone(){
   document.getElementById('qbtn-done-lbl').textContent=isDone?'Marcheaza nefinalizat':'Marcheaza finalizat';
   db.classList.toggle('done-active',isDone);
   toast(isDone?'✓ Parcela marcata finalizat':'Parcela marcata nefinalizat', isDone?'ok':'wn');
+  // Salveaza doneIds in kmlStore pentru persistenta
+  const k=kmlStore.find(x=>x.id===activeKmlId);
+  if(k){
+    k.doneIds=k.feats.filter(f=>f._done).map(f=>f['__nm__']||f[Object.keys(f).find(key=>!key.startsWith('_'))]||'').filter(Boolean);
+    saveState();
+  }
   updChip();
 }
 function qpOpenAttr(){
@@ -842,7 +1162,7 @@ function loadLogo(inp){
 function toggleCam(){
   const btn=document.getElementById('bcam');
   if(!camOn){
-    startCamWithZoom(2.0);
+    startCamWithZoom(1.0);
   }else{
     if(mStream)mStream.getTracks().forEach(t=>t.stop());
     camOn=false;btn.classList.remove('on');closeCam();
@@ -850,83 +1170,101 @@ function toggleCam(){
   }
 }
 
-let currentZoom=2.0;
-
 function startCamWithZoom(zoomFactor){
   const btn=document.getElementById('bcam');
-  // Opreste stream curent daca exista
   if(mStream)mStream.getTracks().forEach(t=>t.stop());
-
-  const constraints={
-    video:{
-      facingMode:{ideal:'environment'},
-      width:{ideal:4096},
-      height:{ideal:2160},
-      zoom: zoomFactor  // suportat pe unele telefoane Android
-    },
+  navigator.mediaDevices.getUserMedia({
+    video:{facingMode:{ideal:'environment'},width:{ideal:4096},height:{ideal:2160}},
     audio:false
-  };
-
-  navigator.mediaDevices.getUserMedia(constraints)
-  .then(s=>{
+  }).then(s=>{
     mStream=s;
     const vid=document.getElementById('vid');
-    vid.srcObject=s;
+    vid.srcObject=s;vid.style.transform='';
     camOn=true;btn.classList.add('on');chkProx();
-
-    // Incearca sa seteze zoom nativ pe track
-    const track=s.getVideoTracks()[0];
-    if(track&&track.getCapabilities){
-      const caps=track.getCapabilities();
-      if(caps.zoom){
-        const minZ=caps.zoom.min||1;
-        const maxZ=caps.zoom.max||10;
-        const z=Math.max(minZ,Math.min(maxZ,zoomFactor));
-        track.applyConstraints({advanced:[{zoom:z}]}).catch(()=>{});
-      }
-    }
+    currentZoomLevel=zoomFactor;
+    const sl=document.getElementById('zoom-slider');
+    if(sl)sl.value=zoomFactor;
+    document.getElementById('zoom-val').textContent=zoomFactor.toFixed(1)+'×';
     toast('Camera pornita','ok');
-  })
-  .catch(e=>{toast('Camera eroare: '+e.name,'er');});
+  }).catch(e=>{toast('Camera eroare: '+e.name,'er');});
 }
 
-function setZoom(type){
-  const zoomMap={ultrawide:0.6, wide:1.0, normal:2.0, tele:5.0};
-  const btnMap={ultrawide:'zbtn-uw', wide:'zbtn-w', normal:'zbtn-n', tele:'zbtn-t'};
-  currentZoom=zoomMap[type]||1.0;
+// ── ZOOM SLIDER ──
+function onZoomSlider(val){
+  const z=parseFloat(val);
+  currentZoomLevel=z;
+  document.getElementById('zoom-val').textContent=z.toFixed(1)+'×';
+  applyZoom(z);
+}
 
-  // Update butoane active
-  Object.keys(btnMap).forEach(k=>{
-    const el=document.getElementById(btnMap[k]);
-    if(el)el.classList.toggle('active',k===type);
-  });
+function applyZoom(z){
+  if(!camOn||!mStream)return;
+  const track=mStream.getVideoTracks()[0];
+  if(!track)return;
+  // Proba zoom nativ
+  if(track.getCapabilities){
+    const caps=track.getCapabilities();
+    if(caps.zoom){
+      const minZ=caps.zoom.min||1;
+      const maxZ=caps.zoom.max||10;
+      const cz=Math.max(minZ,Math.min(maxZ,z));
+      // Actualizeaza slider max cu zoom maxim real
+      const sl=document.getElementById('zoom-slider');
+      if(sl&&parseFloat(sl.max)<maxZ){sl.max=maxZ;}
+      track.applyConstraints({advanced:[{zoom:cz}]}).catch(()=>applyZoomCSS(z));
+      return;
+    }
+  }
+  applyZoomCSS(z);
+}
 
-  if(camOn){
-    const track=mStream&&mStream.getVideoTracks()[0];
+function applyZoomCSS(z){
+  const vid=document.getElementById('vid');
+  vid.style.transform='scale('+z+')';
+  vid.style.transformOrigin='center center';
+}
+
+// Pinch-to-zoom pe video
+(function(){
+  let initDist=0,initZoom=1;
+  document.getElementById('vid').addEventListener('touchstart',e=>{
+    if(e.touches.length===2){
+      initDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,
+                          e.touches[0].clientY-e.touches[1].clientY);
+      initZoom=currentZoomLevel;
+    }
+  },{passive:true});
+  document.getElementById('vid').addEventListener('touchmove',e=>{
+    if(e.touches.length===2){
+      e.preventDefault();
+      const dist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,
+                             e.touches[0].clientY-e.touches[1].clientY);
+      const ratio=dist/initDist;
+      const newZ=Math.max(1,Math.min(10,initZoom*ratio));
+      currentZoomLevel=newZ;
+      const sl=document.getElementById('zoom-slider');
+      if(sl)sl.value=newZ;
+      document.getElementById('zoom-val').textContent=newZ.toFixed(1)+'×';
+      applyZoom(newZ);
+    }
+  },{passive:false});
+})();
+
+function openCam(){
+  if(!camOn){toast('Porneste camera mai intai','wn');return;}
+  document.getElementById('camo').classList.add('show');
+  // Detecteaza zoom maxim disponibil si seteaza slider
+  if(mStream){
+    const track=mStream.getVideoTracks()[0];
     if(track&&track.getCapabilities){
       const caps=track.getCapabilities();
       if(caps.zoom){
-        const minZ=caps.zoom.min||1;
-        const maxZ=caps.zoom.max||10;
-        const z=Math.max(minZ,Math.min(maxZ,currentZoom));
-        track.applyConstraints({advanced:[{zoom:z}]})
-          .then(()=>toast('Zoom: '+currentZoom+'×','ok'))
-          .catch(()=>{
-            // Fallback: restart camera cu zoom CSS pe video
-            document.getElementById('vid').style.transform='scale('+currentZoom+')';
-            document.getElementById('vid').style.transformOrigin='center center';
-            toast('Zoom '+currentZoom+'× (software)','ok');
-          });
-      } else {
-        // Zoom software via CSS scale
-        document.getElementById('vid').style.transform='scale('+currentZoom+')';
-        document.getElementById('vid').style.transformOrigin='center center';
-        toast('Zoom '+currentZoom+'× (software)','ok');
+        const sl=document.getElementById('zoom-slider');
+        if(sl){sl.min=caps.zoom.min||1;sl.max=caps.zoom.max||10;sl.value=currentZoomLevel;}
       }
     }
   }
 }
-function openCam(){if(!camOn){toast('Porneste camera mai intai','wn');return;}document.getElementById('camo').classList.add('show');}
 function closeCam(){document.getElementById('camo').classList.remove('show');}
 
 // ══════════════════════════════════════════════════
