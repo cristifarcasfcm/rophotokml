@@ -21,7 +21,7 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
 
       - name: Create www folder
         run: mkdir -p www && cp index.html www/index.html
@@ -33,7 +33,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Install Capacitor CLI
-        run: npm install -g @capacitor/cli@5
+        run: npm install -g @capacitor/cli@6
 
       - name: Add Android platform
         run: npx cap add android
