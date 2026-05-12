@@ -31,9 +31,40 @@ jobs:
       run: npx cap add android
     - name: Sync Capacitor
       run: npx cap sync android
-    - name: Copy custom MainActivity
-      run: cp MainActivity.java android/app/src/main/java/ro/rophotokml/app/MainActivity.java
-        && echo "MainActivity copied"
+    - name: Write MainActivity with JavascriptInterface
+      run: 'MA="android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        printf ''package ro.rophotokml.app;\n\nimport android.os.Bundle;\nimport android.os.Build;\nimport
+        android.webkit.JavascriptInterface;\nimport android.content.ContentValues;\nimport
+        android.content.ContentResolver;\nimport android.net.Uri;\nimport android.provider.MediaStore;\nimport
+        android.util.Base64;\nimport java.io.OutputStream;\nimport java.io.File;\nimport
+        java.io.FileOutputStream;\n\nimport com.getcapacitor.BridgeActivity;\n\npublic
+        class MainActivity extends BridgeActivity {\n    @Override\n    public void
+        onCreate(Bundle savedInstanceState) {\n        super.onCreate(savedInstanceState);\n        getBridge().getWebView().addJavascriptInterface(new
+        PhotoSaver(), "AndroidPhotoSaver");\n    }\n\n    public class PhotoSaver
+        {\n        @JavascriptInterface\n        public String savePhoto(String base64Data,
+        String filename) {\n            try {\n                byte[] imageBytes =
+        Base64.decode(base64Data, Base64.DEFAULT);\n                if (Build.VERSION.SDK_INT
+        >= Build.VERSION_CODES.Q) {\n                    ContentResolver resolver
+        = getContentResolver();\n                    ContentValues values = new ContentValues();\n                    values.put(MediaStore.Images.Media.DISPLAY_NAME,
+        filename);\n                    values.put(MediaStore.Images.Media.MIME_TYPE,
+        "image/jpeg");\n                    values.put(MediaStore.Images.Media.RELATIVE_PATH,
+        "DCIM/ROPhotoKml");\n                    values.put(MediaStore.Images.Media.IS_PENDING,
+        1);\n                    Uri uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        values);\n                    if (uri == null) return "ERROR:MediaStore insert
+        failed";\n                    try (OutputStream out = resolver.openOutputStream(uri))
+        {\n                        out.write(imageBytes);\n                    }\n                    values.clear();\n                    values.put(MediaStore.Images.Media.IS_PENDING,
+        0);\n                    resolver.update(uri, values, null, null);\n                    return
+        "OK:" + uri.toString();\n                } else {\n                    File
+        dir = new File(android.os.Environment.getExternalStorageDirectory(), "DCIM/ROPhotoKml");\n                    if
+        (!dir.exists()) dir.mkdirs();\n                    File file = new File(dir,
+        filename);\n                    FileOutputStream fos = new FileOutputStream(file);\n                    fos.write(imageBytes);\n                    fos.close();\n                    sendBroadcast(new
+        android.content.Intent(\n                        android.content.Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,\n                        Uri.fromFile(file)));\n                    return
+        "OK:" + file.getAbsolutePath();\n                }\n            } catch (Exception
+        e) {\n                return "ERROR:" + e.getMessage();\n            }\n        }\n    }\n}\n''
+        > "$MA"
+
+        echo ''MainActivity written'''
     - name: Add permissions to AndroidManifest
       run: 'M="android/app/src/main/AndroidManifest.xml"
 
