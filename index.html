@@ -920,66 +920,36 @@ function showPreview(dataUrl){
 }
 
 // ── SAVE ──
-async function saveP(){
+function saveP(){
   if(!lastB64){toast('Nu exista fotografie','er');return;}
   showProg('Se salveaza...');
 
-  // Intotdeauna adauga in galeria sesiunii
+  // Adauga in galeria sesiunii intotdeauna
   pCnt++;
   gallery.push({b64:lastB64,name:lastFname});
   const b=document.getElementById('pbg');
   b.style.display='block';b.textContent=pCnt+' foto';
   document.getElementById('prevo').classList.remove('show');
 
-  if(IS_NATIVE){
-    await saveNative();
-  } else {
-    downloadBlob();
-  }
-}
-
-async function saveNative(){
-  const plugins = window.Capacitor ? window.Capacitor.Plugins : {};
-
-  // NIVEL 1: @capacitor-community/media → direct in Galerie Android
-  if(plugins.Media){
+  // METODA 1: JavascriptInterface nativ Android (APK)
+  // AndroidPhotoSaver e injectat de MainActivity.java
+  if(window.AndroidPhotoSaver){
     try{
-      await plugins.Media.savePhoto({
-        path: 'data:image/jpeg;base64,' + lastB64,
-        album: 'ROPhotoKml'
-      });
+      const result = window.AndroidPhotoSaver.savePhoto(lastB64, lastFname);
       hideProg();
-      toast('✓ Salvat in Galerie','ok');
+      if(result && result.startsWith('OK')){
+        toast('✓ Salvat in DCIM/ROPhotoKml','ok');
+      } else {
+        toast('Eroare Android: '+(result||'necunoscuta'),'er');
+      }
       return;
-    }catch(e1){
-      console.warn('Media plugin err:', e1);
+    }catch(e){
+      console.warn('AndroidPhotoSaver err:',e);
     }
   }
 
-  // NIVEL 2: Filesystem → Pictures/ROPhotoKml (vizibil in Files)
-  if(plugins.Filesystem){
-    try{
-      const {Filesystem, Directory} = plugins;
-      await Filesystem.writeFile({
-        path: 'Pictures/ROPhotoKml/' + lastFname,
-        data: lastB64,
-        directory: Directory.ExternalStorage,
-        recursive: true
-      });
-      hideProg();
-      toast('✓ Salvat in Pictures/ROPhotoKml','ok');
-      return;
-    }catch(e2){
-      console.warn('Filesystem err:', e2);
-    }
-  }
-
-  // NIVEL 3: download via link (Chrome pe Android il descarca in Downloads)
+  // METODA 2: download blob (browser web / fallback)
   hideProg();
-  downloadBlob();
-}
-
-function downloadBlob(){
   try{
     const bin=atob(lastB64);
     const arr=new Uint8Array(bin.length);
@@ -990,10 +960,8 @@ function downloadBlob(){
     a.href=url;a.download=lastFname;a.style.display='none';
     document.body.appendChild(a);a.click();
     setTimeout(()=>{try{document.body.removeChild(a);}catch(e){}URL.revokeObjectURL(url);},3000);
-    hideProg();
-    toast('✓ Descarcata in Downloads: '+lastFname,'ok');
+    toast('✓ Descarcat: '+lastFname,'ok');
   }catch(e){
-    hideProg();
     toast('Eroare salvare: '+e.message,'er');
   }
 }
