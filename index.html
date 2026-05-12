@@ -72,17 +72,18 @@ html,body{height:100%;overflow:hidden;background:#0d1a0d;color:var(--txt);font-f
   white-space:nowrap;flex-shrink:0;transition:all .3s}
 .pl.on{border-color:var(--g);color:var(--g);background:rgba(34,197,94,.1)}
 .pl.wn{border-color:var(--a);color:var(--a)}
-#pchip{display:none;background:rgba(0,0,0,.7);border:1px solid var(--bord);
-  border-radius:8px;padding:5px 8px;margin-bottom:5px}
+#pchip{background:rgba(0,0,0,.7);border:1px solid var(--bord);
+  border-radius:8px;padding:5px 8px;margin-bottom:5px;display:none}
 #pchip.show{display:block}
 #pcid{font-family:var(--mono);font-size:11px;font-weight:700;color:#FAC775}
 #pcmt{font-size:9px;color:var(--muted);margin-top:1px}
-#pcfr{display:none;align-items:center;gap:4px;margin-top:4px}
+#pcfr{display:none;align-items:center;gap:4px;margin-top:6px;
+  padding-top:5px;border-top:1px solid var(--bord)}
 #pcfr.show{display:flex}
-#pcfl{font-size:9px;color:var(--muted);white-space:nowrap}
-#pcfs{flex:1;background:rgba(0,0,0,.5);border:1px solid var(--bord);
-  color:var(--txt);font-family:var(--mono);font-size:10px;padding:3px 5px;
-  border-radius:5px;outline:none}
+#pcfl{font-size:10px;color:var(--g);white-space:nowrap;font-family:var(--mono);font-weight:600}
+#pcfs{flex:1;background:rgba(0,0,0,.6);border:1px solid var(--g);
+  color:var(--txt);font-family:var(--mono);font-size:11px;padding:4px 6px;
+  border-radius:6px;outline:none;cursor:pointer}
 #arow{display:flex;align-items:center;gap:8px}
 #linfo{flex:1;font-family:var(--mono);font-size:8.5px;color:var(--muted);line-height:1.8}
 #linfo .lv{color:var(--txt)}
@@ -792,7 +793,9 @@ function deleteKML(id){
 function parseAndActivateKML(k, showRemain){
   // Parse XML daca nu e inca parsat
   if(!k.feats){
-    k.feats=parseKMLXml(k.xml, k.doneIds||[]);
+    const result=parseKMLXml(k.xml, k.doneIds||[]);
+    k.feats=result.feats;
+    k._allF=result.allF;
   }
   // Restore done state
   if(k.doneIds&&k.doneIds.length){
@@ -804,10 +807,9 @@ function parseAndActivateKML(k, showRemain){
   feats=k.feats;
   kmlName=k.name;
   allF=k._allF||[];
+  selField=''; // reset
   buildFS();
   drawAll();fitAll();
-  // Salveaza allF
-  k._allF=allF;
 
   if(showRemain){
     const total=feats.length;
@@ -860,14 +862,27 @@ function parseKMLXml(xml, doneIds){
     parsed.push(f);
   });
   allF=Array.from(fs);
-  return parsed;
+  return {feats: parsed, allF: Array.from(fs)};
 }
 function buildFS(){
-  const s=document.getElementById('pcfs');s.innerHTML='';
-  if(allF.includes('__nm__')){const o=document.createElement('option');o.value='__nm__';o.textContent='Name';s.appendChild(o);}
-  allF.forEach(f=>{if(f==='__nm__')return;const o=document.createElement('option');o.value=f;o.textContent=f;s.appendChild(o);});
+  const s=document.getElementById('pcfs');
+  if(!s)return;
+  s.innerHTML='';
+  if(!allF||!allF.length){
+    document.getElementById('pcfr').classList.remove('show');
+    return;
+  }
+  if(allF.includes('__nm__')){
+    const o=document.createElement('option');o.value='__nm__';o.textContent='Name';s.appendChild(o);
+  }
+  allF.forEach(f=>{
+    if(f==='__nm__')return;
+    const o=document.createElement('option');o.value=f;o.textContent=f;s.appendChild(o);
+  });
   selField=s.value||'';
-  document.getElementById('pcfr').classList.toggle('show',allF.length>0);
+  document.getElementById('pcfr').classList.add('show');
+  // Afiseaza si selector-ul de câmp permanent vizibil in pchip
+  document.getElementById('pchip').classList.add('show');
 }
 function onFC(){selField=document.getElementById('pcfs').value;updChip();updSt();drawAll();}
 function lbl(f){
