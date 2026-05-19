@@ -460,7 +460,11 @@ input[type=file]{display:none}
     <span class="pl" id="ptim">—</span>
   </div>
   <div id="pchip"><div id="pcid">—</div><div id="pcmt"></div>
-    <div id="pcfr"><span id="pcfl">Camp:</span><select id="pcfs" onchange="onFC()"></select></div>
+    <div id="pcfr"><span id="pcfl">Camp ID:</span><select id="pcfs" onchange="onFC()"></select></div>
+    <div id="pcfr2" style="display:none;align-items:center;gap:4px;margin-top:4px;padding-top:4px;border-top:1px solid rgba(34,197,94,.15)">
+      <span style="font-size:9px;color:#f59e0b;white-space:nowrap;font-family:var(--mono);font-weight:600">Cultura:</span>
+      <select id="pcfs2" style="flex:1;background:rgba(0,0,0,.6);border:1px solid #f59e0b;color:var(--txt);font-family:var(--mono);font-size:10px;padding:3px 5px;border-radius:5px;outline:none" onchange="onFC2()"></select>
+    </div>
   </div>
   <div id="arow">
     <div id="linfo">
@@ -881,10 +885,25 @@ function buildFS(){
   });
   selField=s.value||'';
   document.getElementById('pcfr').classList.add('show');
-  // Afiseaza si selector-ul de câmp permanent vizibil in pchip
   document.getElementById('pchip').classList.add('show');
+  // Al doilea selector - Cultura declarata
+  const s2=document.getElementById('pcfs2');
+  if(s2){
+    s2.innerHTML='<option value="">— niciun camp —</option>';
+    allF.forEach(f=>{
+      if(f==='__nm__')return;
+      const o=document.createElement('option');o.value=f;o.textContent=f;
+      if(/cultura|cod_cult|cultur|uso|cod_uso/i.test(f))o.selected=true;
+      s2.appendChild(o);
+    });
+    document.getElementById('pcfr2').style.display=allF.length>0?'flex':'none';
+  }
 }
 function onFC(){selField=document.getElementById('pcfs').value;updChip();updSt();drawAll();}
+function onFC2(){
+  // Al doilea camp selectat = cultura declarata pe fotografie
+  updSt();
+}
 function lbl(f){
   if(!selField)return f['__nm__']||'—';
   const k=selField==='__nm__'?'__nm__':selField;
@@ -1071,6 +1090,8 @@ function onPos(p){
     uMk=L.marker([lat,lon],{icon:mkPin(),zIndexOffset:1000}).addTo(map);
     aCir=L.circle([lat,lon],{radius:acc,color:'#3b82f6',fillColor:'#3b82f6',fillOpacity:.07,weight:1}).addTo(map);
   }else{uMk.setLatLng([lat,lon]);aCir.setLatLng([lat,lon]);aCir.setRadius(acc);}
+  // Geocodare automata la fix GPS
+  if(!cachedUAT) triggerGeocode();
   autoSel();chkProx();updSt();
 }
 function onPosErr(e){toast('GPS: '+e.message,'wn');}
@@ -1158,12 +1179,19 @@ function updChip(){
 }
 function updSt(){
   const pd=n=>String(n).padStart(2,'0');const now=new Date();
-  const ts=pd(now.getDate())+'.'+pd(now.getMonth()+1)+'.'+now.getFullYear()+'  '+pd(now.getHours())+':'+pd(now.getMinutes())+':'+pd(now.getSeconds());
-  document.getElementById('vsi').textContent=curF?lbl(curF):'— Parcela neselectata —';
-  document.getElementById('vsk').textContent='KML: '+kmlName;
-  document.getElementById('vsc').textContent=lat?'Lat: '+lat.toFixed(6)+'  Lon: '+lon.toFixed(6):'Lat: —  Lon: —';
-  document.getElementById('vsa').textContent='Acc: '+(acc?acc.toFixed(1)+' m':'—')+'  Alt: '+(alt!=null?alt.toFixed(1)+' m':'—')+'  Azimut: '+(hdg!=null?hdg+'° '+cdir(hdg):'—');
-  document.getElementById('vsd').textContent=ts;
+  const dataFmt=pd(now.getDate())+'/'+pd(now.getMonth()+1)+'/'+now.getFullYear();
+  const dataOra=dataFmt+' '+pd(now.getHours())+':'+pd(now.getMinutes());
+  const parcelId=(curF&&selField&&curF[selField])?curF[selField]:(curF&&curF['__nm__']?curF['__nm__']:'— Parcela neselectata —');
+  const s2val=document.getElementById('pcfs2')?document.getElementById('pcfs2').value:'';
+  const culturaVal=(curF&&s2val&&curF[s2val])?curF[s2val]:'';
+  const uatDisp=cachedUAT||(lat?'se detecteaza...':'—');
+  const orientare=hdg!=null?cdir(hdg):'—';
+  // Update stamp vizibil in camera
+  document.getElementById('vsi').textContent=parcelId;
+  document.getElementById('vsk').textContent=culturaVal?'Cultura declarata: '+culturaVal:'KML: '+kmlName;
+  document.getElementById('vsc').textContent=lat?lat.toString()+', '+lon.toString():'—';
+  document.getElementById('vsa').textContent='Altitudine: '+(alt!=null?alt.toString():'—');
+  document.getElementById('vsd').textContent=(uatDisp||'—')+' Orientare: '+orientare;
 }
 setInterval(()=>{updSt();if(gpsOn)chkProx();updChip();},1000);
 
@@ -1396,148 +1424,303 @@ function buildEXIF(dtStr, latV, lonV, altV, hdgV) {
   return new Uint8Array([0xFF,0xE1,...lenBytes,...app1Body]);
 }
 
-// ── CAPTURE ──
-function doCapture(){
-  const vid=document.getElementById('vid');
-  if(!vid.videoWidth){toast('Camera nu e gata','wn');return;}
-  showProg('Se captureaza...');
-  const w=vid.videoWidth,h=vid.videoHeight;
-  const cnv=document.getElementById('cnv');
-  cnv.width=w;cnv.height=h;
-  const ctx=cnv.getContext('2d');
-  ctx.drawImage(vid,0,0,w,h);
+// ── GEOCODARE REVERSE (UAT din coordonate) ──
+let cachedUAT = '';
+async function getUAT(lat, lon) {
+  if (cachedUAT) return cachedUAT;
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=ro`;
+    const r = await fetch(url);
+    const d = await r.json();
+    const addr = d.address || {};
+    const uat = addr.city || addr.town || addr.village || addr.municipality || addr.county || '';
+    cachedUAT = uat.toUpperCase();
+    return cachedUAT;
+  } catch(e) {
+    return '';
+  }
+}
 
-  const pd=n=>String(n).padStart(2,'0');
-  const now=new Date();
-  const ts=pd(now.getDate())+'.'+pd(now.getMonth()+1)+'.'+now.getFullYear()+
-    '  '+pd(now.getHours())+':'+pd(now.getMinutes())+':'+pd(now.getSeconds());
-  const dtExif=now.getFullYear()+':'+pd(now.getMonth()+1)+':'+pd(now.getDate())+
+// ── QR CODE generator (data matrix simplu prin canvas) ──
+function generateQR(ctx, text, x, y, size) {
+  // Folosim un QR simplu generat cu biblioteca qrcode
+  // Fallback: desenam un patrat cu text daca nu e disponibila
+  try {
+    // Generare QR via API publica (data URI)
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      ctx.drawImage(img, x, y, size, size);
+    };
+    // Folosim google charts QR API
+    const encoded = encodeURIComponent(text.substring(0, 150));
+    img.src = `https://chart.googleapis.com/chart?chs=${size}x${size}&cht=qr&chl=${encoded}&choe=UTF-8`;
+  } catch(e) {
+    // Fallback: patrat alb cu X
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(x, y, size, size);
+    ctx.fillStyle = '#000000';
+    ctx.font = `${Math.round(size/8)}px monospace`;
+    ctx.fillText('QR', x+size*0.3, y+size*0.55);
+  }
+}
+
+// ── BLOCARE BUTON BACK (nu iese din aplicatie) ──
+(function blockBack() {
+  // Adauga o intrare in history la fiecare overlay deschis
+  window.addEventListener('popstate', function(e) {
+    // La apasarea Back, reimputem starea fara a iesi
+    history.pushState(null, '', window.location.href);
+    // Inchide orice overlay deschis
+    ['camo','prevo','galo','fullview','apb'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && (el.classList.contains('show') || el.style.display === 'flex' || el.style.display === 'block')) {
+        el.classList.remove('show');
+        el.style.display = '';
+      }
+    });
+    document.getElementById('apo') && document.getElementById('apo').classList.remove('show');
+    document.getElementById('kml-manager') && document.getElementById('kml-manager').classList.remove('show');
+    document.getElementById('kml-manager-overlay') && document.getElementById('kml-manager-overlay').classList.remove('show');
+  });
+  // Seteaza starea initiala
+  history.pushState(null, '', window.location.href);
+})();
+
+// ── CAPTURE — format identic cu aplicatia de referinta ──
+function doCapture(){
+  const vid = document.getElementById('vid');
+  if (!vid.videoWidth) { toast('Camera nu e gata', 'wn'); return; }
+  showProg('Se captureaza...');
+
+  const w = vid.videoWidth, h = vid.videoHeight;
+  const cnv = document.getElementById('cnv');
+  cnv.width = w; cnv.height = h;
+  const ctx = cnv.getContext('2d');
+  ctx.drawImage(vid, 0, 0, w, h);
+
+  const pd = n => String(n).padStart(2, '0');
+  const now = new Date();
+  const dtExif = now.getFullYear()+':'+pd(now.getMonth()+1)+':'+pd(now.getDate())+
     ' '+pd(now.getHours())+':'+pd(now.getMinutes())+':'+pd(now.getSeconds());
 
-  const pid=(curF&&selField&&curF[selField])?
-    String(curF[selField]).replace(/[^a-zA-Z0-9_\-]/g,'_').substring(0,40):'parcela';
-  lastFname=pid+'_'+now.getFullYear()+pd(now.getMonth()+1)+pd(now.getDate())+
-    '_'+pd(now.getHours())+pd(now.getMinutes())+pd(now.getSeconds())+'.jpg';
+  // ── Date pentru overlay ──
+  // Campul principal selectat (ID parcela complet)
+  const parcelId = (curF && selField && curF[selField]) ? curF[selField] : (curF && curF['__nm__'] ? curF['__nm__'] : '');
 
-  const lines=[
-    curF?lbl(curF):'— Parcela neselectata —',
-    'KML: '+kmlName,
-    lat?'Lat: '+lat.toFixed(6)+'  Lon: '+lon.toFixed(6):'Lat: —  Lon: —',
-    'Acc: '+(acc?acc.toFixed(1)+' m':'—')+
-      '  Alt: '+(alt!=null?alt.toFixed(1)+' m':'—')+
-      '  Az: '+(hdg!=null?hdg+'° '+cdir(hdg):'—'),
-    ts
-  ];
-
-  const fs=Math.max(18,Math.round(h*.024));
-  const pp=Math.round(fs*.65);
-  const lh=Math.round(fs*1.55);
-
-  // Functie care imparte textul pe randuri astfel incat sa incapa in maxW
-  function wrapText(text, maxW){
-    const words=text.split(' ');
-    const rows=[];
-    let row='';
-    for(const w of words){
-      const test=row?row+' '+w:w;
-      if(ctx.measureText(test).width<=maxW){ row=test; }
-      else { if(row)rows.push(row); row=w; }
-    }
-    if(row)rows.push(row);
-    return rows.length?rows:[text];
+  // Cultura declarata — al doilea camp selectabil (al doilea dropdown sau camp fix)
+  // Cauta camp care contine cultura/cod_cultura/cultura_dec in KML
+  let culturaVal = '';
+  let cultField2 = document.getElementById('pcfs2') ? document.getElementById('pcfs2').value : '';
+  if (curF && cultField2 && curF[cultField2]) {
+    culturaVal = curF[cultField2];
+  } else if (curF) {
+    // Cauta automat camp cu "cultura" sau "cod" in nume
+    const cultKey = allF.find(k => /cultura|cod_cult|cultur/i.test(k));
+    if (cultKey) culturaVal = curF[cultKey] || '';
   }
 
-  // Latime chenar = 55% din latime imaginii
-  const bW=Math.round(w*0.55);
-  const maxTxtW=bW-pp*2;
+  // Data formatata ZZ/LL/AAAA
+  const dataFmt = pd(now.getDate())+'/'+pd(now.getMonth()+1)+'/'+now.getFullYear();
 
-  // Pre-calculeaza toate randurile pentru fiecare linie
-  ctx.font='bold '+Math.round(fs*1.1)+'px "Courier New",monospace';
-  const rows0=wrapText(lines[0],maxTxtW);
-  ctx.font='bold '+fs+'px "Courier New",monospace';
-  const rows1=wrapText(lines[1],maxTxtW);
-  ctx.font=fs+'px "Courier New",monospace';
-  const rows2=wrapText(lines[2],maxTxtW);
-  const rows3=wrapText(lines[3],maxTxtW);
-  const rows4=wrapText(lines[4],maxTxtW);
+  // Numar foto curent (incremental per sesiune)
+  const numeAnex = (curF && curF['__anex__']) ? curF['__anex__'] : '';
+  const numeFoto = (numeAnex || (selField && curF ? (curF[selField]||'').split('_').pop() : '')) + '_' + (pCnt + 1);
 
-  const allRows=[
-    {rows:rows0, color:'#FAC775',  bold:true,  size:Math.round(fs*1.1)},
-    {rows:rows1, color:'#a8d5a8',  bold:true,  size:fs},
-    {rows:rows2, color:'#ffffff',  bold:false, size:fs},
-    {rows:rows3, color:'#ffffff',  bold:false, size:fs},
-    {rows:rows4, color:'#ffffff',  bold:false, size:fs},
+  // CUI beneficiar — primul segment din ID parcela (ex: RO012818778)
+  const cuiBen = parcelId ? parcelId.split('_')[0] || parcelId : '';
+
+  // Localitate din geocodare
+  const uatGPS = cachedUAT || '';
+
+  // Data ora
+  const dataOra = dataFmt.replace(/\//g,'/')+' '+pd(now.getHours())+':'+pd(now.getMinutes());
+
+  // Coordonate full precision
+  const latStr = lat ? lat.toString() : '—';
+  const lonStr = lon ? lon.toString() : '—';
+  const coordStr = lat ? latStr + ', ' + lonStr : '—';
+
+  // Altitudine full precision
+  const altStr = alt != null ? alt.toString() : '—';
+
+  // Orientare
+  const orientare = hdg != null ? cdir(hdg) : '—';
+  const uatOrientare = (uatGPS || 'NECUNOSCUT') + ' Orientare: ' + orientare;
+
+  // Versiune app
+  const appVer = 'Versiune app: 1.0.0 - '+pd(now.getDate())+'/'+pd(now.getMonth()+1)+'/'+now.getFullYear();
+
+  // Filename: parcelId_numarFoto
+  const pid = parcelId.replace(/[^a-zA-Z0-9_\-]/g,'_').substring(0,60);
+  lastFname = pid + '_' + (pCnt+1) + '.jpg';
+
+  // ── DIMENSIUNI BENZI ──
+  const fs = Math.max(24, Math.round(h * 0.028)); // font size
+  const lh = Math.round(fs * 1.5);  // line height
+  const pp = Math.round(fs * 0.5);  // padding
+
+  // Banda sus — 4 randuri: ID, Cultura, Data, Nume Foto
+  const topLines = [
+    parcelId || '— Parcela neselectata —',
+    culturaVal ? 'Cultura declarata: ' + culturaVal : '',
+    dataFmt,
+    'Nume Foto: ' + numeFoto,
+  ].filter(l => l !== '');
+
+  const topH = topLines.length * lh + pp * 2;
+
+  // Banda jos — 7 randuri: CUI, localitate_hash, data_ora, coordonate, altitudine, UAT+orientare, versiune
+  const botLines = [
+    cuiBen,
+    kmlName ? 'mm_#' + kmlName.toLowerCase().replace(/\s+/g,'_').substring(0,20) : 'mm_#',
+    dataOra,
+    coordStr,
+    'Altitudine: ' + altStr,
+    uatOrientare,
+    appVer,
   ];
+  const botH = botLines.length * lh + pp * 2;
 
-  const totalRows=allRows.reduce((s,g)=>s+g.rows.length,0);
-  const bH=totalRows*lh+pp*2;
-  const bY=h-bH;
+  // ── DESENARE BANDA SUS ──
+  ctx.fillStyle = 'rgba(0,0,0,0.85)';
+  ctx.fillRect(0, 0, w, topH);
 
-  // Fundal semi-transparent stanga
-  ctx.fillStyle='rgba(0,0,0,0.50)';
-  ctx.fillRect(0,bY,bW,bH);
-  ctx.fillStyle='#185FA5';
-  ctx.fillRect(0,bY,bW,3);
+  ctx.font = 'bold ' + fs + 'px "Courier New", monospace';
+  let curY = pp + fs;
+  topLines.forEach((line, i) => {
+    ctx.fillStyle = '#FAC775'; // portocaliu/galben pentru toate liniile sus
+    ctx.fillText(line, pp, curY);
+    curY += lh;
+  });
 
-  // Deseneaza fiecare rand
-  let curY=bY+pp+Math.round(fs);
-  for(const group of allRows){
-    ctx.font=(group.bold?'bold ':'')+group.size+'px "Courier New",monospace';
-    ctx.fillStyle=group.color;
-    for(const row of group.rows){
-      ctx.fillText(row,pp,curY);
-      curY+=lh;
+  // ── WATERMARK AN (semitransparent, centru imagine) ──
+  const year = now.getFullYear().toString();
+  const wmSize = Math.round(h * 0.22);
+  ctx.save();
+  ctx.globalAlpha = 0.12;
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold ' + wmSize + 'px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(year, w/2, h/2);
+  ctx.restore();
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+
+  // ── LOGO (daca exista) ──
+  const doBottomAndFinish = (qrImg) => {
+    // ── DESENARE BANDA JOS ──
+    const botY = h - botH;
+    ctx.fillStyle = 'rgba(0,0,0,0.85)';
+    ctx.fillRect(0, botY, w, botH);
+
+    // QR code — dreapta jos, in banda de jos
+    const qrSize = botH - pp * 2;
+    const qrX = w - qrSize - pp;
+    const qrY = botY + pp;
+    if (qrImg && qrImg.complete && qrImg.naturalWidth > 0) {
+      // Fundal alb pentru QR
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8);
+      ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
     }
-  }
 
-  function doFinish(){
+    // Text banda jos — alb
+    ctx.font = fs + 'px "Courier New", monospace';
+    ctx.fillStyle = '#ffffff';
+    const maxBotW = qrImg && qrImg.complete ? qrX - pp * 2 : w - pp * 2;
+    let bY = botY + pp + fs;
+    botLines.forEach(line => {
+      // Trunchiem daca e prea lung
+      let l = line;
+      while (ctx.measureText(l).width > maxBotW && l.length > 4) l = l.slice(0, -1);
+      ctx.fillText(l, pp, bY);
+      bY += lh;
+    });
+
+    // Logo (daca exista) — suprapus in banda jos, dreapta langa QR
+    if (logoUrl && qrImg && qrImg.complete) {
+      const logoH = Math.round(qrSize * 0.45);
+      const logoW = Math.round(logoH * 2.5);
+      const lx = qrX - logoW - pp;
+      const ly = botY + Math.round((botH - logoH) / 2);
+      const li = new Image();
+      li.onload = () => {
+        ctx.globalAlpha = 0.88;
+        ctx.drawImage(li, lx, ly, logoW, logoH);
+        ctx.globalAlpha = 1;
+        finishCapture();
+      };
+      li.onerror = finishCapture;
+      li.src = logoUrl;
+    } else {
+      finishCapture();
+    }
+  };
+
+  // ── INCARCA QR CODE ──
+  const qrData = [parcelId, coordStr, 'Alt:'+altStr, dataOra].filter(Boolean).join(' | ');
+  const qrImg = new Image();
+  qrImg.crossOrigin = 'anonymous';
+  let qrLoaded = false;
+  const qrTimeout = setTimeout(() => {
+    if (!qrLoaded) { qrImg.src = ''; doBottomAndFinish(null); }
+  }, 3000);
+  qrImg.onload = () => {
+    qrLoaded = true;
+    clearTimeout(qrTimeout);
+    doBottomAndFinish(qrImg);
+  };
+  qrImg.onerror = () => {
+    qrLoaded = true;
+    clearTimeout(qrTimeout);
+    doBottomAndFinish(null);
+  };
+  // Dimensiune QR
+  const qrPx = Math.max(120, Math.round(h * 0.12));
+  qrImg.src = `https://chart.googleapis.com/chart?chs=${qrPx}x${qrPx}&cht=qr&chl=${encodeURIComponent(qrData.substring(0,200))}&choe=UTF-8`;
+
+  function finishCapture() {
     showProg('Se aplica EXIF WGS84...');
-    try{
-      // toDataURL funcționează în orice WebView Android
-      const dataURL=cnv.toDataURL('image/jpeg',0.95);
-      const b64=dataURL.split(',')[1];
-      const binStr=atob(b64);
-      const orig=new Uint8Array(binStr.length);
-      for(let i=0;i<binStr.length;i++)orig[i]=binStr.charCodeAt(i);
-
-      // Skip existing APP0/APP1/APP2
-      let skip=2;
-      while(skip<orig.length-3&&orig[skip]===0xFF){
-        const mt=orig[skip+1];
-        if(mt>=0xE0&&mt<=0xEF){const ml=(orig[skip+2]<<8)|orig[skip+3];skip+=2+ml;}
+    try {
+      const dataURL = cnv.toDataURL('image/jpeg', 0.95);
+      const b64 = dataURL.split(',')[1];
+      const binStr = atob(b64);
+      const orig = new Uint8Array(binStr.length);
+      for (let i = 0; i < binStr.length; i++) orig[i] = binStr.charCodeAt(i);
+      let skip = 2;
+      while (skip < orig.length-3 && orig[skip]===0xFF) {
+        const mt = orig[skip+1];
+        if (mt>=0xE0 && mt<=0xEF) { const ml=(orig[skip+2]<<8)|orig[skip+3]; skip+=2+ml; }
         else break;
       }
-      const app1=buildEXIF(dtExif,lat,lon,alt,hdg);
-      const out=new Uint8Array(2+app1.length+orig.length-skip);
-      out[0]=0xFF;out[1]=0xD8;
-      out.set(app1,2);
-      out.set(orig.slice(skip),2+app1.length);
-
-      // Back to base64
-      let bin='';
-      const chunkSize=8192;
-      for(let i=0;i<out.length;i+=chunkSize){
-        bin+=String.fromCharCode(...out.slice(i,i+chunkSize));
-      }
-      lastB64=btoa(bin);
-      showPreview('data:image/jpeg;base64,'+lastB64);
-    }catch(err){
-      console.error('EXIF err:',err);
-      lastB64=cnv.toDataURL('image/jpeg',0.95).split(',')[1];
-      toast('EXIF partial','wn');
-      showPreview('data:image/jpeg;base64,'+lastB64);
+      const app1 = buildEXIF(dtExif, lat, lon, alt, hdg);
+      const out = new Uint8Array(2 + app1.length + orig.length - skip);
+      out[0]=0xFF; out[1]=0xD8;
+      out.set(app1, 2);
+      out.set(orig.slice(skip), 2 + app1.length);
+      let bin = '';
+      const chunkSize = 8192;
+      for (let i = 0; i < out.length; i += chunkSize)
+        bin += String.fromCharCode(...out.slice(i, i+chunkSize));
+      lastB64 = btoa(bin);
+      showPreview('data:image/jpeg;base64,' + lastB64);
+    } catch(err) {
+      console.error('EXIF err:', err);
+      lastB64 = cnv.toDataURL('image/jpeg', 0.95).split(',')[1];
+      showPreview('data:image/jpeg;base64,' + lastB64);
     }
   }
+}
 
-  if(logoUrl){
-    const li=new Image();
-    li.onload=function(){
-      const lh2=Math.round(bH*.72);const lw2=Math.round(lh2*2.2);
-      ctx.globalAlpha=0.88;ctx.drawImage(li,w-lw2-pp,bY+Math.round((bH-lh2)/2),lw2,lh2);ctx.globalAlpha=1;
-      doFinish();
-    };
-    li.onerror=doFinish;li.src=logoUrl;
-  }else{doFinish();}
+// Geocodeaza automat cand GPS e activ
+function triggerGeocode() {
+  if (lat && lon && !cachedUAT) {
+    getUAT(lat, lon).then(uat => {
+      if (uat) toast('UAT detectat: ' + uat, 'ok');
+    });
+  }
 }
 
 function showPreview(dataUrl){
