@@ -74,9 +74,9 @@ html,body{height:100%;overflow:hidden;background:#0d1a0d;color:var(--txt);font-f
 #prox{position:fixed;right:8px;bottom:92px;z-index:250;width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,.6);border:2px solid #444;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:8px;color:#666;text-align:center;line-height:1.3;transition:all .4s;pointer-events:none;white-space:pre-line}
 #prox.near{border-color:var(--g);color:var(--g);box-shadow:0 0 14px var(--glow);background:rgba(34,197,94,.1)}
 /* ── PARCEL POPUP ── */
-#pp-overlay{position:fixed;inset:0;z-index:590;background:rgba(0,0,0,.55);display:none}
+#pp-overlay{position:fixed;inset:0;z-index:1100;background:rgba(0,0,0,.55);display:none}
 #pp-overlay.show{display:block}
-#pp{position:fixed;bottom:0;left:0;right:0;z-index:600;
+#pp{position:fixed;bottom:0;left:0;right:0;z-index:1101;
   background:rgba(5,14,5,.98);border-top:2px solid var(--bord);
   border-radius:18px 18px 0 0;padding:0 0 28px;display:none;
   box-shadow:0 -6px 28px rgba(0,0,0,.6);max-height:82vh;overflow-y:auto}
@@ -415,40 +415,53 @@ let cachedUAT='';
 const LS_KEY='rophotokml_state';
 
 // ── BACK BUTTON + EXIT CONFIRM ──
-// Pe Android WebView, popstate se declanseaza la tasta Back.
-// Strategia: reinpingem mereu o intrare in history → nu se iese automat.
-// Daca nimic nu e deschis → afisam dialog de confirmare iesire.
-(function(){
-  // Pune 2 intrari proprii in history (buffer)
-  history.pushState({rph:1},'',location.href);
-  history.pushState({rph:1},'',location.href);
-})();
+// Strategia multipla pentru Android WebView:
+// 1. popstate (functioneaza in browser si unele WebView-uri)
+// 2. JavascriptInterface onBackPressed() apelat din MainActivity.java
+// 3. document.addEventListener('backbutton') pentru Capacitor/Cordova
 
-window.addEventListener('popstate',function(){
-  // Reinpinge imediat — previne iesirea
-  history.pushState({rph:1},'',location.href);
-
+function handleBackPress(){
   // Inchide layerul cel mai din fata
   const layers=[
-    'fullview','prevo','camo','galo','export-modal','kml-manager','pp'
+    'exit-dialog','fullview','prevo','camo','galo','export-modal','kml-manager','pp'
   ];
   for(const id of layers){
     const el=document.getElementById(id);
     if(el&&el.classList.contains('show')){
-      // Inchide corect fiecare
-      if(id==='fullview')closeFull();
-      else if(id==='prevo')discardP();
-      else if(id==='camo')closeCam();
-      else if(id==='galo')closeGallery();
-      else if(id==='export-modal'){el.classList.remove('show');const mo=document.getElementById('modal-overlay');if(mo)mo.classList.remove('show');}
-      else if(id==='kml-manager')closeKmlManager();
-      else if(id==='pp')closePP();
-      return;
+      if(id==='exit-dialog'){cancelExit();return true;}
+      if(id==='fullview'){closeFull();return true;}
+      if(id==='prevo'){discardP();return true;}
+      if(id==='camo'){closeCam();return true;}
+      if(id==='galo'){closeGallery();return true;}
+      if(id==='export-modal'){el.classList.remove('show');const mo=document.getElementById('modal-overlay');if(mo)mo.classList.remove('show');return true;}
+      if(id==='kml-manager'){closeKmlManager();return true;}
+      if(id==='pp'){closePP();return true;}
     }
   }
   // Nimic deschis → dialog iesire
   showExitDialog();
+  return true;
+}
+
+// Metoda 1: popstate (browser + unele WebView)
+(function(){
+  history.pushState({rph:1},'',location.href);
+  history.pushState({rph:1},'',location.href);
+  history.pushState({rph:1},'',location.href);
+})();
+window.addEventListener('popstate',function(e){
+  history.pushState({rph:1},'',location.href);
+  handleBackPress();
 });
+
+// Metoda 2: JavascriptInterface — MainActivity.java apeleaza window.onAndroidBack()
+window.onAndroidBack=function(){ handleBackPress(); };
+
+// Metoda 3: Capacitor/Cordova backbutton event
+document.addEventListener('backbutton',function(e){
+  e.preventDefault();
+  handleBackPress();
+},false);
 
 function showExitDialog(){
   document.getElementById('exit-overlay').classList.add('show');
@@ -461,8 +474,11 @@ function cancelExit(){
 function confirmExit(){
   document.getElementById('exit-overlay').classList.remove('show');
   document.getElementById('exit-dialog').classList.remove('show');
-  // Scoate intrarile proprii si permite iesirea nativa
-  history.go(-3);
+  if(window.AndroidApp&&window.AndroidApp.exitApp){
+    window.AndroidApp.exitApp();
+  } else {
+    history.go(-10);
+  }
 }
 
 // ── SPLASH ──
