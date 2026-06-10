@@ -403,7 +403,7 @@ canvas{display:none}
 <div id="splash">
   <div id="splash-lens"><div id="splash-ring1"></div><div id="splash-ring2"></div><div id="splash-ring3"></div><div id="splash-bar-wrap"><div id="splash-bar"></div></div><div id="splash-pct">0%</div></div>
   <div id="splash-title">ROPhotoKml</div>
-  <div id="splash-sub">GPS · KML · Creat Cristian Farcas</div>
+  <div id="splash-sub">GPS · KML · APIA Maramures</div>
 </div>
 <div id="prog"><div class="spin"></div><p id="prog-txt">Se proceseaza...</p></div>
 <div id="tst"></div>
