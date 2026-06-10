@@ -8,7 +8,6 @@
 <meta name="theme-color" content="#0d1a0d">
 <title>ROPhotoKml</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none}
 :root{
@@ -74,35 +73,56 @@ html,body{height:100%;overflow:hidden;background:#0d1a0d;color:var(--txt);font-f
 #gbtn span{font-size:7px;font-family:var(--mono);color:var(--muted)}
 #prox{position:fixed;right:8px;bottom:92px;z-index:250;width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,.6);border:2px solid #444;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:8px;color:#666;text-align:center;line-height:1.3;transition:all .4s;pointer-events:none;white-space:pre-line}
 #prox.near{border-color:var(--g);color:var(--g);box-shadow:0 0 14px var(--glow);background:rgba(34,197,94,.1)}
-/* QUICK POPUP */
-#qpop-overlay{position:fixed;inset:0;z-index:590;background:rgba(0,0,0,.5);display:none}
-#qpop-overlay.show{display:block}
-#qpop{position:fixed;bottom:0;left:0;right:0;z-index:600;background:rgba(6,16,6,.98);border-top:2px solid var(--bord);border-radius:16px 16px 0 0;padding:14px 16px 28px;display:none;box-shadow:0 -4px 20px rgba(0,0,0,.5)}
-#qpop.show{display:block}
-#qpop-title{font-family:var(--mono);font-size:12px;font-weight:700;color:#FAC775;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--bord)}
-#qpop-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.qp-btn{display:flex;align-items:center;gap:8px;padding:11px 12px;border-radius:10px;border:1px solid var(--bord);background:rgba(34,197,94,.08);color:var(--txt);font-size:13px;font-family:system-ui;cursor:pointer;transition:all .2s}
-.qp-btn:active{background:rgba(34,197,94,.22);transform:scale(.97)}
-.qp-btn span:first-child{font-size:16px}
-.qp-btn.done-active{border-color:var(--g);background:rgba(34,197,94,.2);color:var(--g)}
-.qp-btn.qp-close{border-color:rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:var(--muted)}
-/* ATTR POPUP */
-#apo{position:fixed;inset:0;z-index:590;background:rgba(0,0,0,.6);display:none}
-#apo.show{display:block}
-#apb{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:600;width:90%;max-width:360px;background:rgba(6,16,6,.98);border:1px solid var(--bord);border-radius:14px;overflow:hidden;display:none;box-shadow:0 8px 32px rgba(0,0,0,.7)}
-#apb.show{display:block}
-#aph{background:rgba(34,197,94,.1);border-bottom:1px solid var(--bord);padding:10px 12px;display:flex;align-items:center;justify-content:space-between}
-#apt{font-family:var(--mono);font-size:12px;font-weight:700;color:#FAC775}
-#apc{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.08);border:none;color:var(--muted);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
-#apd{padding:8px 12px;max-height:60vh;overflow-y:auto}
-.ar{display:flex;gap:6px;padding:5px 0;border-bottom:1px solid rgba(34,197,94,.07);font-size:11px}
-.ar:last-child{border-bottom:none}
-.ak{font-family:var(--mono);color:var(--muted);min-width:75px;flex-shrink:0;font-size:10px}
-.av{font-family:var(--mono);color:var(--txt);word-break:break-all}
-#apf{padding:8px 12px;border-top:1px solid var(--bord);display:flex;gap:6px}
-.ab{flex:1;padding:7px;border-radius:7px;border:none;font-size:11px;font-family:var(--mono);cursor:pointer}
-.ab.p{background:rgba(34,197,94,.18);border:1px solid var(--g);color:var(--g)}
-.ab.s{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);color:var(--muted)}
+/* ── PARCEL POPUP ── */
+#pp-overlay{position:fixed;inset:0;z-index:590;background:rgba(0,0,0,.55);display:none}
+#pp-overlay.show{display:block}
+#pp{position:fixed;bottom:0;left:0;right:0;z-index:600;
+  background:rgba(5,14,5,.98);border-top:2px solid var(--bord);
+  border-radius:18px 18px 0 0;padding:0 0 28px;display:none;
+  box-shadow:0 -6px 28px rgba(0,0,0,.6);max-height:82vh;overflow-y:auto}
+#pp.show{display:block}
+#pp-head{display:flex;align-items:center;justify-content:space-between;
+  padding:13px 16px 10px;border-bottom:1px solid var(--bord)}
+#pp-title{font-family:var(--mono);font-size:13px;font-weight:700;color:#FAC775;
+  flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:8px}
+#pp-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:12px 14px 8px}
+.pp-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:5px;padding:12px 6px;border-radius:12px;border:1px solid var(--bord);
+  background:rgba(34,197,94,.06);color:var(--txt);font-size:11px;
+  font-family:system-ui;cursor:pointer;transition:all .18s;min-height:64px}
+.pp-btn:active{transform:scale(.94)}
+.pp-btn span:first-child{font-size:20px}
+.pp-btn.pp-done{border-color:rgba(34,197,94,.4);background:rgba(34,197,94,.08)}
+.pp-btn.pp-done.active{border-color:var(--g);background:rgba(34,197,94,.22);color:var(--g)}
+.pp-btn.pp-photo{border-color:rgba(24,95,165,.4);background:rgba(24,95,165,.08)}
+.pp-btn.pp-del{border-color:rgba(239,68,68,.35);background:rgba(239,68,68,.06);color:#fca5a5}
+#pp-attrs-wrap{margin:4px 14px 0;border:1px solid var(--bord);border-radius:10px;overflow:hidden}
+#pp-attrs-hd{background:rgba(34,197,94,.08);padding:7px 12px;
+  font-family:var(--mono);font-size:10px;font-weight:700;color:var(--g);
+  border-bottom:1px solid var(--bord);letter-spacing:.06em}
+#pp-attrs{padding:4px 0}
+.pa-row{display:flex;gap:6px;padding:5px 12px;border-bottom:1px solid rgba(34,197,94,.06);font-size:11px}
+.pa-row:last-child{border-bottom:none}
+.pa-k{font-family:var(--mono);color:var(--muted);min-width:80px;flex-shrink:0;font-size:10px}
+.pa-v{font-family:var(--mono);color:var(--txt);word-break:break-all}
+.pa-kml{color:#a8d5a8!important;font-weight:600}
+/* ── EXIT DIALOG ── */
+#exit-overlay{position:fixed;inset:0;z-index:1500;background:rgba(0,0,0,.7);display:none}
+#exit-overlay.show{display:block}
+#exit-dialog{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  z-index:1600;background:rgba(5,14,5,.99);border:1px solid rgba(239,68,68,.4);
+  border-radius:16px;padding:24px 22px;width:84%;max-width:300px;text-align:center;
+  display:none;box-shadow:0 10px 40px rgba(0,0,0,.8)}
+#exit-dialog.show{display:block}
+#exit-icon{font-size:36px;margin-bottom:10px}
+#exit-msg{font-family:var(--mono);font-size:14px;color:var(--txt);margin-bottom:20px;line-height:1.5}
+#exit-btns{display:flex;flex-direction:column;gap:8px}
+#exit-yes{padding:11px;border-radius:9px;border:1px solid var(--r);
+  background:rgba(239,68,68,.15);color:#fca5a5;font-size:13px;
+  cursor:pointer;font-family:var(--mono);font-weight:700}
+#exit-no{padding:11px;border-radius:9px;border:1px solid var(--bord);
+  background:rgba(34,197,94,.1);color:var(--g);font-size:13px;
+  cursor:pointer;font-family:var(--mono)}
 /* CAMERA */
 #camo{position:fixed;inset:0;z-index:700;background:#000;display:none;flex-direction:column}
 #camo.show{display:flex}
@@ -172,13 +192,6 @@ canvas{display:none}
 #remain-icon{font-size:32px;margin-bottom:8px}
 #remain-text{font-family:var(--mono);font-size:13px;color:var(--txt);margin-bottom:14px;line-height:1.6}
 #remain-popup button{padding:8px 20px;border-radius:8px;border:1px solid var(--g);background:rgba(34,197,94,.15);color:var(--g);font-size:13px;cursor:pointer;font-family:var(--mono)}
-/* EDIT TOOLS TOOLBAR */
-#edit-toolbar{position:fixed;top:55px;right:8px;z-index:400;display:none;flex-direction:column;gap:4px;background:rgba(6,16,6,.92);border:1px solid var(--bord);border-radius:10px;padding:6px}
-#edit-toolbar.show{display:flex}
-.et-btn{width:36px;height:36px;border-radius:8px;border:1px solid var(--bord);background:rgba(0,0,0,.4);color:var(--txt);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all .2s}
-.et-btn:active{transform:scale(.9)}
-.et-btn.on{border-color:var(--g);background:rgba(34,197,94,.2);color:var(--g)}
-.et-btn.danger{border-color:var(--r);color:var(--r)}
 /* EXPORT MODAL */
 #export-modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:900;background:rgba(6,16,6,.98);border:1px solid var(--bord);border-radius:14px;padding:20px;width:88%;max-width:320px;display:none}
 #export-modal.show{display:block}
@@ -243,9 +256,6 @@ canvas{display:none}
   <div style="display:flex;flex-direction:column;align-items:center;gap:1px">
     <button class="sb wb on" id="bbuf" onclick="toggleBuf()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span class="sl">Buffer</span></button>
   </div>
-  <div style="display:flex;flex-direction:column;align-items:center;gap:1px">
-    <button class="sb" id="bedit" onclick="toggleEditMode()"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg><span class="sl">Editare</span></button>
-  </div>
   <div class="sp"></div>
   <div style="display:flex;flex-direction:column;align-items:center;gap:1px">
     <button class="sb" onclick="centerMap()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v5M12 18v5M1 12h5M18 12h5"/></svg><span class="sl">Centru</span></button>
@@ -253,16 +263,6 @@ canvas{display:none}
   <div style="display:flex;flex-direction:column;align-items:center;gap:1px">
     <button class="sb" id="blyr" onclick="toggleLayer()"><svg viewBox="0 0 24 24"><polygon points="12,2 22,8.5 12,15 2,8.5"/><polyline points="2,15.5 12,22 22,15.5" opacity=".4"/></svg><span class="sl">Strat</span></button>
   </div>
-</div>
-<!-- EDIT TOOLBAR -->
-<div id="edit-toolbar">
-  <button class="et-btn" id="et-draw" onclick="setEditTool('draw')" title="Deseneaza poligon">✏️</button>
-  <button class="et-btn" id="et-edit" onclick="setEditTool('edit')" title="Editeaza vertexuri">🔧</button>
-  <button class="et-btn" id="et-drag" onclick="setEditTool('drag')" title="Muta poligon">✋</button>
-  <button class="et-btn" id="et-cut" onclick="setEditTool('cut')" title="Decupeaza">✂️</button>
-  <button class="et-btn danger" id="et-del" onclick="setEditTool('del')" title="Sterge poligon">🗑️</button>
-  <button class="et-btn" onclick="document.getElementById('export-modal').classList.add('show');document.getElementById('modal-overlay').classList.add('show')" title="Export">📤</button>
-  <button class="et-btn" onclick="toggleEditMode()" title="Inchide editare" style="font-size:13px">✕</button>
 </div>
 <div id="bot">
   <div id="pills">
@@ -300,11 +300,41 @@ canvas{display:none}
   </div>
 </div>
 <!-- ATTR POPUP -->
-<div id="apo" onclick="closeAP()"></div>
-<div id="apb">
-  <div id="aph"><span id="apt">Atribute</span><button id="apc" onclick="closeAP()">✕</button></div>
-  <div id="apd"></div>
-  <div id="apf"><button class="ab p" onclick="closeAP();openCam()">📷 Fotografiaza</button><button class="ab s" onclick="closeAP()">Inchide</button></div>
+<!-- PARCEL POPUP — apare la tap pe poligon -->
+<div id="pp-overlay" onclick="closePP()"></div>
+<div id="pp">
+  <div id="pp-head">
+    <div id="pp-title">Parcela</div>
+    <button onclick="closePP()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:0 2px">✕</button>
+  </div>
+  <!-- Butoane actiuni -->
+  <div id="pp-actions">
+    <button class="pp-btn pp-done" id="pp-done-btn" onclick="ppToggleDone()">
+      <span id="pp-done-icon">○</span>
+      <span id="pp-done-lbl">Marcheaza finalizat</span>
+    </button>
+    <button class="pp-btn pp-photo" onclick="closePP();openCam()">
+      <span>📷</span><span>Fotografiaza</span>
+    </button>
+    <button class="pp-btn pp-del" onclick="ppDelete()">
+      <span>🗑</span><span>Sterge parcela</span>
+    </button>
+  </div>
+  <!-- Atribute parcela -->
+  <div id="pp-attrs-wrap">
+    <div id="pp-attrs-hd">☰ Atribute</div>
+    <div id="pp-attrs"></div>
+  </div>
+</div>
+<!-- DIALOG IESIRE DIN APLICATIE -->
+<div id="exit-overlay"></div>
+<div id="exit-dialog">
+  <div id="exit-icon">🚪</div>
+  <div id="exit-msg">Doriti sa iesiti din aplicatie?</div>
+  <div id="exit-btns">
+    <button id="exit-yes" onclick="confirmExit()">Da, iesire</button>
+    <button id="exit-no" onclick="cancelExit()">Ramane in aplicatie</button>
+  </div>
 </div>
 <!-- CAMERA -->
 <div id="camo">
@@ -363,7 +393,6 @@ canvas{display:none}
 <div id="tst"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.min.js"></script>
 <script>
 'use strict';
 
@@ -382,44 +411,59 @@ let lastB64=null,lastFname='',pCnt=0;
 let mStream=null,isSat=true;
 let gallery=[];
 let currentZoomLevel=1.0;
-let editMode=false;
 let cachedUAT='';
 const LS_KEY='rophotokml_state';
 
-// ── BACK BUTTON — non-exit ──
-(function blockBack(){
-  // Adauga doua intrari in history ca rezerva
-  history.pushState({page:'app'},'',location.href);
-  history.pushState({page:'app'},'',location.href);
-  window.addEventListener('popstate',function(e){
-    // Reinpinge imediat sa nu iasa
-    history.pushState({page:'app'},'',location.href);
-    // Inchide overlay-ul cel mai din față
-    const checks=[
-      {id:'fullview', cls:'show'},
-      {id:'prevo',    cls:'show'},
-      {id:'camo',     cls:'show'},
-      {id:'galo',     cls:'show'},
-      {id:'export-modal', cls:'show'},
-      {id:'kml-manager',  cls:'show'},
-      {id:'apb',      cls:'show'},
-      {id:'qpop',     cls:'show'},
-    ];
-    for(const c of checks){
-      const el=document.getElementById(c.id);
-      if(el&&el.classList.contains(c.cls)){
-        el.classList.remove(c.cls);
-        // Inchide si overlay-urile asociate
-        ['apo','qpop-overlay','modal-overlay','kml-manager-overlay'].forEach(oid=>{
-          const o=document.getElementById(oid);
-          if(o)o.classList.remove('show');
-        });
-        return;
-      }
-    }
-    // Daca nimic nu e deschis, nu face nimic (nu iese din app)
-  });
+// ── BACK BUTTON + EXIT CONFIRM ──
+// Pe Android WebView, popstate se declanseaza la tasta Back.
+// Strategia: reinpingem mereu o intrare in history → nu se iese automat.
+// Daca nimic nu e deschis → afisam dialog de confirmare iesire.
+(function(){
+  // Pune 2 intrari proprii in history (buffer)
+  history.pushState({rph:1},'',location.href);
+  history.pushState({rph:1},'',location.href);
 })();
+
+window.addEventListener('popstate',function(){
+  // Reinpinge imediat — previne iesirea
+  history.pushState({rph:1},'',location.href);
+
+  // Inchide layerul cel mai din fata
+  const layers=[
+    'fullview','prevo','camo','galo','export-modal','kml-manager','pp'
+  ];
+  for(const id of layers){
+    const el=document.getElementById(id);
+    if(el&&el.classList.contains('show')){
+      // Inchide corect fiecare
+      if(id==='fullview')closeFull();
+      else if(id==='prevo')discardP();
+      else if(id==='camo')closeCam();
+      else if(id==='galo')closeGallery();
+      else if(id==='export-modal'){el.classList.remove('show');const mo=document.getElementById('modal-overlay');if(mo)mo.classList.remove('show');}
+      else if(id==='kml-manager')closeKmlManager();
+      else if(id==='pp')closePP();
+      return;
+    }
+  }
+  // Nimic deschis → dialog iesire
+  showExitDialog();
+});
+
+function showExitDialog(){
+  document.getElementById('exit-overlay').classList.add('show');
+  document.getElementById('exit-dialog').classList.add('show');
+}
+function cancelExit(){
+  document.getElementById('exit-overlay').classList.remove('show');
+  document.getElementById('exit-dialog').classList.remove('show');
+}
+function confirmExit(){
+  document.getElementById('exit-overlay').classList.remove('show');
+  document.getElementById('exit-dialog').classList.remove('show');
+  // Scoate intrarile proprii si permite iesirea nativa
+  history.go(-3);
+}
 
 // ── SPLASH ──
 function runSplash(){
@@ -479,8 +523,6 @@ const lSat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Wor
 const lOSM=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:21,maxNativeZoom:19});
 lSat.addTo(map);
 
-// Init Geoman
-map.pm.setGlobalOptions({snappable:true,snapDistance:15});
 
 function toggleLayer(){
   if(isSat){map.removeLayer(lSat);lOSM.addTo(map);}
@@ -492,70 +534,6 @@ function toggleLayer(){
 function mkPin(){return L.divIcon({className:'',iconSize:[30,40],iconAnchor:[15,40],
   html:'<div style="width:30px;height:40px;position:relative"><div style="width:30px;height:30px;border-radius:50% 50% 50% 0;background:#ef4444;border:3px solid #fff;transform:rotate(-45deg);position:absolute;top:0;left:0;box-shadow:0 3px 10px rgba(0,0,0,.6)"><div style="width:10px;height:10px;border-radius:50%;background:#fff;position:absolute;top:7px;left:7px"></div></div><div style="width:4px;height:10px;background:#ef4444;position:absolute;bottom:0;left:13px;border-radius:0 0 2px 2px"></div></div>'
 });}
-
-// ── EDIT MODE ──
-let activeEditTool=null;
-function toggleEditMode(){
-  editMode=!editMode;
-  document.getElementById('bedit').classList.toggle('on',editMode);
-  document.getElementById('edit-toolbar').classList.toggle('show',editMode);
-  if(!editMode){
-    // Disable all Geoman tools
-    map.pm.disableDraw();
-    map.pm.disableGlobalEditMode();
-    map.pm.disableGlobalDragMode();
-    map.pm.disableGlobalCutMode();
-    map.pm.disableGlobalRemovalMode();
-    activeEditTool=null;
-    document.querySelectorAll('.et-btn').forEach(b=>b.classList.remove('on'));
-  }
-  toast(editMode?'Mod editare ACTIV — selecteaza un instrument':'Mod editare dezactivat',editMode?'ok':'wn');
-}
-
-function setEditTool(tool){
-  map.pm.disableDraw();
-  map.pm.disableGlobalEditMode();
-  map.pm.disableGlobalDragMode();
-  map.pm.disableGlobalCutMode();
-  map.pm.disableGlobalRemovalMode();
-  document.querySelectorAll('.et-btn').forEach(b=>b.classList.remove('on'));
-  if(activeEditTool===tool){activeEditTool=null;return;}
-  activeEditTool=tool;
-  document.getElementById('et-'+tool)&&document.getElementById('et-'+tool).classList.add('on');
-  switch(tool){
-    case 'draw': map.pm.enableDraw('Polygon',{snappable:true}); break;
-    case 'edit': map.pm.enableGlobalEditMode(); break;
-    case 'drag': map.pm.enableGlobalDragMode(); break;
-    case 'cut':  map.pm.enableGlobalCutMode(); break;
-    case 'del':  map.pm.enableGlobalRemovalMode(); break;
-  }
-  toast({draw:'Deseneaza poligon nou',edit:'Editeaza vertexuri',drag:'Muta poligoane',cut:'Decupeaza poligon',del:'Sterge poligon'}[tool],'ok');
-}
-
-// Listen for new shapes drawn by Geoman
-map.on('pm:create',function(e){
-  const layer=e.layer;
-  const f={_c:layer.getLatLngs()[0].map(ll=>[ll.lat,ll.lng]),_ctr:null,_done:false,__nm__:'Poligon nou'};
-  if(f._c.length){const las=f._c.map(c=>c[0]),los=f._c.map(c=>c[1]);f._ctr=[(Math.min(...las)+Math.max(...las))/2,(Math.min(...los)+Math.max(...los))/2];}
-  layer.on('click',()=>selParcel(f,layer,feats.length));
-  layer._feat=f;
-  feats.push(f);
-  polyL.push({ly:layer,mk:null,f,i:feats.length-1});
-  syncActiveKML();
-  toast('Poligon nou creat','ok');
-});
-
-map.on('pm:remove',function(e){
-  const layer=e.layer;
-  const idx=polyL.findIndex(p=>p.ly===layer);
-  if(idx>=0){feats.splice(polyL[idx].i,1);polyL.splice(idx,1);syncActiveKML();}
-  toast('Poligon sters','wn');
-});
-
-function syncActiveKML(){
-  const k=kmlStore.find(x=>x.id===activeKmlId);
-  if(k){k.feats=feats;saveState();}
-}
 
 // ── EXPORT ──
 function exportFormat(fmt){
@@ -736,11 +714,65 @@ function parseAndActivateKML(k,showRemain){
 function parseKMLXml(xml,doneIds){
   const doc=new DOMParser().parseFromString(xml,'text/xml');
   const parsed=[];const fs=new Set();
+
+  // Extrage stilurile definite in KML (color/fillColor per styleId)
+  const styleMap={};
+  doc.querySelectorAll('Style').forEach(s=>{
+    const sid=s.getAttribute('id');
+    if(!sid)return;
+    // PolyStyle
+    const ps=s.querySelector('PolyStyle');
+    const ls=s.querySelector('LineStyle');
+    let fillColor='#22c55e',strokeColor='#22c55e',fillOpacity=0.15;
+    if(ps){
+      const c=ps.querySelector('color');
+      if(c){
+        const abgr=c.textContent.trim();
+        if(abgr.length===8){
+          const a=parseInt(abgr.substring(0,2),16)/255;
+          const b=abgr.substring(2,4);const g=abgr.substring(4,6);const r=abgr.substring(6,8);
+          fillColor='#'+r+g+b;fillOpacity=Math.min(0.6,Math.max(0.05,a*0.6));
+        }
+      }
+    }
+    if(ls){
+      const c=ls.querySelector('color');
+      if(c){
+        const abgr=c.textContent.trim();
+        if(abgr.length===8){
+          const b=abgr.substring(2,4);const g=abgr.substring(4,6);const r=abgr.substring(6,8);
+          strokeColor='#'+r+g+b;
+        }
+      }
+    }
+    styleMap['#'+sid]={fillColor,strokeColor,fillOpacity};
+  });
+  // StyleMap — mapeaza normal/highlight
+  const styleMappings={};
+  doc.querySelectorAll('StyleMap').forEach(sm=>{
+    const sid=sm.getAttribute('id');
+    if(!sid)return;
+    sm.querySelectorAll('Pair').forEach(pair=>{
+      const key=pair.querySelector('key');
+      const url=pair.querySelector('styleUrl');
+      if(key&&key.textContent.trim()==='normal'&&url){
+        styleMappings['#'+sid]=url.textContent.trim();
+      }
+    });
+  });
+
   doc.querySelectorAll('Placemark').forEach(pm=>{
-    const f={_c:[],_ctr:null,_done:false};
+    const f={_c:[],_ctr:null,_done:false,_style:null};
     pm.querySelectorAll('SimpleData').forEach(sd=>{const n=sd.getAttribute('name');f[n]=sd.textContent.trim();fs.add(n);});
     pm.querySelectorAll('Data').forEach(d=>{const n=d.getAttribute('name');const v=d.querySelector('value');if(v){f[n]=v.textContent.trim();fs.add(n);}});
     const ne=pm.querySelector('name');if(ne){f['__nm__']=ne.textContent.trim();fs.add('__nm__');}
+    // Extrage stil
+    const su=pm.querySelector('styleUrl');
+    if(su){
+      let sid=su.textContent.trim();
+      if(styleMappings[sid])sid=styleMappings[sid];
+      if(styleMap[sid])f._style=styleMap[sid];
+    }
     const cs=[];
     pm.querySelectorAll('coordinates').forEach(c=>{
       c.textContent.trim().split(/\s+/).forEach(t=>{
@@ -782,11 +814,24 @@ function drawKMLLayer(k){
   k.feats.forEach((f,i)=>{
     if(f._c.length<2)return;
     const sel=(curF===f),done=!!f._done;
-    const ly=L.polygon(f._c,{
-      color:sel&&!done?'#f59e0b':'#22c55e',weight:sel?3:2,
-      fillColor:done?'#22c55e':sel?'#f59e0b':'#22c55e',
-      fillOpacity:done?.35:sel?.28:.10,dashArray:sel&&!done?'7,4':null
-    });
+    // Culori din KML sau default
+    const kmlFill=(f._style&&f._style.fillColor)||'#22c55e';
+    const kmlStroke=(f._style&&f._style.strokeColor)||'#22c55e';
+    const kmlOpacity=(f._style&&f._style.fillOpacity)||0.12;
+    let style;
+    if(done){
+      // Finalizat: verde deschis cu hasura
+      style={color:'#22c55e',fillColor:'#22c55e',fillOpacity:.40,weight:2,dashArray:'6,3'};
+    } else if(sel){
+      // Selectat: portocaliu
+      style={color:'#f59e0b',fillColor:'#f59e0b',fillOpacity:.28,weight:3,dashArray:'7,4'};
+    } else {
+      // Normal: culoarea din KML
+      style={color:kmlStroke,fillColor:kmlFill,fillOpacity:kmlOpacity,weight:2,dashArray:null};
+    }
+    const ly=L.polygon(f._c,style);
+    // Salveaza stilul original pentru restaurare
+    ly._origStyle={color:kmlStroke,fillColor:kmlFill,fillOpacity:kmlOpacity,weight:2};
     let mk=null;
     if(f._ctr){
       const ico=L.divIcon({className:'',iconAnchor:[0,8],
@@ -815,114 +860,104 @@ function fitAll(){
 
 function selParcel(f,ly,idx){
   if(selLy&&selLy!==ly){
-    const wasDone=selLy._feat&&selLy._feat._done;
-    selLy.setStyle(wasDone?{color:'#22c55e',fillColor:'#22c55e',fillOpacity:.35,weight:2,dashArray:null}:{color:'#22c55e',fillColor:'#22c55e',fillOpacity:.10,weight:2,dashArray:null});
+    const prev=selLy._feat;
+    if(prev&&prev._done){
+      selLy.setStyle({color:'#22c55e',fillColor:'#22c55e',fillOpacity:.35,weight:2,dashArray:null});
+    } else {
+      // Restaureaza culoarea originala din KML
+      const origStyle=selLy._origStyle||{color:'#22c55e',fillColor:'#22c55e',fillOpacity:.10,weight:2};
+      selLy.setStyle({...origStyle,dashArray:null});
+    }
   }
-  curF=f;selLy=ly;ly._feat=f;
-  if(!f._done)ly.setStyle({color:'#f59e0b',fillColor:'#f59e0b',fillOpacity:.28,weight:3,dashArray:'7,4'});
+  curF=f; selLy=ly; ly._feat=f;
+  if(!f._done){
+    // Salveaza stilul original inainte de selectare
+    if(!ly._origStyle) ly._origStyle={color:ly.options.color,fillColor:ly.options.fillColor,fillOpacity:ly.options.fillOpacity,weight:ly.options.weight};
+    ly.setStyle({color:'#f59e0b',fillColor:'#f59e0b',fillOpacity:.28,weight:3,dashArray:'7,4'});
+  }
   map.fitBounds(ly.getBounds(),{padding:[40,40],maxZoom:18});
-  updChip();updSt();chkProx();showQPop(f);
+  updChip();updSt();chkProx();
+  showPP(f);
 }
 
-// ── QUICK POPUP ──
-function showQPop(f){
-  document.getElementById('qpop-title').textContent=lbl(f);
-  const isDone=!!f._done;
-  document.getElementById('qbtn-done').classList.toggle('done-active',isDone);
-  document.getElementById('qbtn-done-icon').textContent=isDone?'✓':'○';
-  document.getElementById('qbtn-done-lbl').textContent=isDone?'Marcheaza nefinalizat':'Marcheaza finalizat';
-  document.getElementById('qpop-overlay').classList.add('show');
-  document.getElementById('qpop').classList.add('show');
-}
-function closeQPop(){document.getElementById('qpop-overlay').classList.remove('show');document.getElementById('qpop').classList.remove('show');}
-function toggleDone(){
-  if(!curF)return;
-  curF._done=!curF._done;
-  if(selLy){selLy.setStyle(curF._done?{color:'#22c55e',fillColor:'#22c55e',fillOpacity:.35,weight:3,dashArray:null}:{color:'#f59e0b',fillColor:'#f59e0b',fillOpacity:.28,weight:3,dashArray:'7,4'});}
-  document.getElementById('qbtn-done-icon').textContent=curF._done?'✓':'○';
-  document.getElementById('qbtn-done-lbl').textContent=curF._done?'Marcheaza nefinalizat':'Marcheaza finalizat';
-  document.getElementById('qbtn-done').classList.toggle('done-active',curF._done);
-  toast(curF._done?'✓ Parcela finalizata':'Parcela nefinalizata',curF._done?'ok':'wn');
-  const k=kmlStore.find(x=>x.id===activeKmlId);
-  if(k){k.doneIds=k.feats.filter(f=>f._done).map(f=>f['__nm__']||f[Object.keys(f).find(key=>!key.startsWith('_'))]||'').filter(Boolean);saveState();}
-  updChip();
-}
-function qpOpenAttr(){closeQPop();showAP(curF);}
-
-function showAP(f){
+// ── PARCEL POPUP ──
+function showPP(f){
   if(!f)return;
   const isDone=!!f._done;
-  // Header cu titlu
-  document.getElementById('apt').textContent=lbl(f)||'Atribute parcela';
-
-  // Construieste continut complet: bifa + KML + atribute
-  const body=document.getElementById('apd');
-  body.innerHTML='';
-
-  // ── Bifa finalizare ──
-  const doneRow=document.createElement('div');
-  doneRow.id='ap-done-row';
-  doneRow.style.cssText='padding:10px 0 6px;margin-bottom:6px;border-bottom:1px solid rgba(34,197,94,.2);display:flex;align-items:center;gap:10px;cursor:pointer';
-  doneRow.onclick=()=>toggleDoneFromAP();
-  doneRow.innerHTML=
-    '<div id="ap-done-chk" style="width:28px;height:28px;border-radius:6px;border:2px solid '+(isDone?'#22c55e':'#555')+
-    ';background:'+(isDone?'rgba(34,197,94,.2)':'transparent')+
-    ';display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;transition:all .2s">'+
-    (isDone?'✓':'')+
-    '</div>'+
-    '<span id="ap-done-lbl" style="font-family:var(--mono);font-size:13px;font-weight:700;color:'+(isDone?'#22c55e':'#aaa')+'">'+
-    (isDone?'✓ Parcela finalizata':'Marcheaza ca finalizata')+
-    '</span>';
-  body.appendChild(doneRow);
-
-  // ── KML sursa ──
-  const kmlRow=document.createElement('div');
-  kmlRow.className='ar';
-  kmlRow.innerHTML='<span class="ak">KML</span><span class="av" style="color:#a8d5a8">'+ex(kmlName||'—')+'</span>';
-  body.appendChild(kmlRow);
-
-  // ── Toate atributele ──
-  const keys=Object.keys(f).filter(k=>!k.startsWith('_'));
-  if(keys.length){
-    const sep=document.createElement('div');
-    sep.style.cssText='font-family:var(--mono);font-size:9px;color:var(--muted);padding:6px 0 3px;text-transform:uppercase;letter-spacing:.1em';
-    sep.textContent='Atribute';
-    body.appendChild(sep);
-    keys.forEach(k=>{
-      const row=document.createElement('div');
-      row.className='ar';
-      row.innerHTML='<span class="ak">'+ex(k==='__nm__'?'Name':k)+'</span><span class="av">'+ex(f[k])+'</span>';
-      body.appendChild(row);
-    });
-  }
-
-  document.getElementById('apo').classList.add('show');
-  document.getElementById('apb').classList.add('show');
-  history.pushState({page:'app'},'',location.href);
+  document.getElementById('pp-title').textContent=lbl(f)||f['__nm__']||'Parcela';
+  // Stare buton finalizare
+  const btn=document.getElementById('pp-done-btn');
+  document.getElementById('pp-done-icon').textContent=isDone?'✓':'○';
+  document.getElementById('pp-done-lbl').textContent=isDone?'Finalizata — anuleaza':'Marcheaza finalizat';
+  btn.classList.toggle('active',isDone);
+  // Atribute
+  const attrs=document.getElementById('pp-attrs');
+  attrs.innerHTML='';
+  // KML sursa
+  const kr=document.createElement('div');kr.className='pa-row';
+  kr.innerHTML='<span class="pa-k pa-kml">KML</span><span class="pa-v" style="color:#a8d5a8">'+ex(kmlName||'—')+'</span>';
+  attrs.appendChild(kr);
+  // Toate campurile
+  Object.keys(f).forEach(k=>{
+    if(k.startsWith('_'))return;
+    const row=document.createElement('div');row.className='pa-row';
+    row.innerHTML='<span class="pa-k">'+ex(k==='__nm__'?'Name':k)+'</span><span class="pa-v">'+ex(f[k])+'</span>';
+    attrs.appendChild(row);
+  });
+  document.getElementById('pp-overlay').classList.add('show');
+  document.getElementById('pp').classList.add('show');
 }
 
-function toggleDoneFromAP(){
+function closePP(){
+  document.getElementById('pp-overlay').classList.remove('show');
+  document.getElementById('pp').classList.remove('show');
+}
+
+function ppToggleDone(){
   if(!curF)return;
   curF._done=!curF._done;
   const isDone=curF._done;
-  // Update checkbox in popup atribute
-  const chk=document.getElementById('ap-done-chk');
-  const lbl2=document.getElementById('ap-done-lbl');
-  if(chk){
-    chk.style.border='2px solid '+(isDone?'#22c55e':'#555');
-    chk.style.background=isDone?'rgba(34,197,94,.2)':'transparent';
-    chk.textContent=isDone?'✓':'';
+  // Culoare parcela: verde cu hasura daca finalizata
+  if(selLy){
+    if(isDone){
+      selLy.setStyle({color:'#22c55e',fillColor:'#22c55e',fillOpacity:.45,weight:2,dashArray:'6,3'});
+    } else {
+      const origStyle=selLy._origStyle||{color:'#22c55e',fillColor:'#22c55e',fillOpacity:.10,weight:2};
+      selLy.setStyle({...origStyle,dashArray:null});
+    }
   }
-  if(lbl2){lbl2.style.color=isDone?'#22c55e':'#aaa';lbl2.textContent=isDone?'✓ Parcela finalizata':'Marcheaza ca finalizata';}
-  // Coloreaza parcela pe harta
-  if(selLy){selLy.setStyle(isDone?{color:'#22c55e',fillColor:'#22c55e',fillOpacity:.40,weight:3,dashArray:null}:{color:'#f59e0b',fillColor:'#f59e0b',fillOpacity:.28,weight:3,dashArray:'7,4'});}
-  toast(isDone?'✓ Parcela finalizata!':'Parcela nefinalizata','ok');
+  // Update buton
+  document.getElementById('pp-done-icon').textContent=isDone?'✓':'○';
+  document.getElementById('pp-done-lbl').textContent=isDone?'Finalizata — anuleaza':'Marcheaza finalizat';
+  document.getElementById('pp-done-btn').classList.toggle('active',isDone);
+  toast(isDone?'✓ Parcela finalizata':'Parcela nefinalizata',isDone?'ok':'wn');
+  // Salveaza
   const k=kmlStore.find(x=>x.id===activeKmlId);
-  if(k){k.doneIds=k.feats.filter(f=>f._done).map(f=>f['__nm__']||f[Object.keys(f).find(key=>!key.startsWith('_'))]||'').filter(Boolean);saveState();}
+  if(k){k.doneIds=(k.feats||[]).filter(f=>f._done).map(f=>f['__nm__']||f[Object.keys(f).find(kk=>!kk.startsWith('_'))]||'').filter(Boolean);saveState();}
   updChip();
 }
 
-function closeAP(){document.getElementById('apo').classList.remove('show');document.getElementById('apb').classList.remove('show');}
+function ppDelete(){
+  if(!curF)return;
+  if(!confirm('Stergi aceasta parcela?'))return;
+  // Sterge de pe harta
+  const idx=polyL.findIndex(p=>p.f===curF);
+  if(idx>=0){
+    map.removeLayer(polyL[idx].ly);
+    if(polyL[idx].mk)map.removeLayer(polyL[idx].mk);
+    polyL.splice(idx,1);
+  }
+  // Sterge din feats
+  const fi=feats.indexOf(curF);
+  if(fi>=0)feats.splice(fi,1);
+  curF=null;selLy=null;
+  closePP();
+  // Sync KML activ
+  const k=kmlStore.find(x=>x.id===activeKmlId);
+  if(k){k.feats=feats;saveState();}
+  updChip();
+  toast('Parcela stearsa','wn');
+}
 
 // ── GPS ──
 function startGPS(){
