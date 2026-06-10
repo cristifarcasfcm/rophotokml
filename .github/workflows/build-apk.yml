@@ -32,7 +32,152 @@ jobs:
     - name: Sync Capacitor
       run: npx cap sync android
     - name: Write MainActivity
-      run: python3 write_main.py
+      run: 'mkdir -p android/app/src/main/java/ro/rophotokml/app
+
+        > "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''package ro.rophotokml.app;'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''import android.os.Bundle;'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''import android.os.Build;'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''import android.webkit.JavascriptInterface;'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''import android.webkit.WebView;'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''import android.content.ContentValues;'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''import android.content.ContentResolver;'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''import android.net.Uri;'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''import android.provider.MediaStore;'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''import android.util.Base64;'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''import java.io.OutputStream;'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''import java.io.File;'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''import java.io.FileOutputStream;'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''import com.getcapacitor.BridgeActivity;'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''public class MainActivity extends BridgeActivity {'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''    @Override'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''    public void onCreate(Bundle savedInstanceState) {'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''        super.onCreate(savedInstanceState);'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''        getBridge().getWebView().addJavascriptInterface(new NativeBridge(),
+        "AndroidApp");'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''    }'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''    @Override'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''    public void onBackPressed() {'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''        WebView wv = getBridge().getWebView();'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''        wv.evaluateJavascript('' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''            "if(typeof window.onAndroidBack===''"''"''function''"''"''){window.onAndroidBack();''"''"''handled''"''"'';}else{''"''"''unhandled''"''"'';}",''
+        >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''            val -> { if(val==null||!val.contains("handled")){runOnUiThread(()->MainActivity.super.onBackPressed());}
+        }'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''        );'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''    }'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''    public class NativeBridge {'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''        @JavascriptInterface'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''        public String savePhoto(String b64, String fn) {'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''            try {'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''                byte[] b = Base64.decode(b64, Base64.DEFAULT);'' >>
+        "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+        {'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''                    ContentResolver r = getContentResolver();'' >>
+        "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''                    ContentValues v = new ContentValues();'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''                    v.put(MediaStore.Images.Media.DISPLAY_NAME, fn);''
+        >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''                    v.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");''
+        >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''                    v.put(MediaStore.Images.Media.RELATIVE_PATH, "DCIM/ROPhotoKml");''
+        >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''                    v.put(MediaStore.Images.Media.IS_PENDING, 1);''
+        >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''                    Uri u = r.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        v);'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''                    if(u==null) return "ERROR:insert failed";'' >>
+        "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''                    try(OutputStream o=r.openOutputStream(u)){o.write(b);}''
+        >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''                    v.clear(); v.put(MediaStore.Images.Media.IS_PENDING,
+        0);'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''                    r.update(u,v,null,null);'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''                    return "OK:"+u.toString();'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''                } else {'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''                    File d=new File(android.os.Environment.getExternalStorageDirectory(),"DCIM/ROPhotoKml");''
+        >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''                    if(!d.exists())d.mkdirs();'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''                    File f2=new File(d,fn);'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''                    FileOutputStream fs=new FileOutputStream(f2);''
+        >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''                    fs.write(b); fs.close();'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''                    sendBroadcast(new android.content.Intent(android.content.Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,Uri.fromFile(f2)));''
+        >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''                    return "OK:"+f2.getAbsolutePath();'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''                }'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''            } catch(Exception e){return "ERROR:"+e.getMessage();}''
+        >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''        }'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''        @JavascriptInterface'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''        public void exitApp(){ finishAffinity(); }'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''    }'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo ''}'' >> "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
+
+        echo "MainActivity written: $(wc -l < "android/app/src/main/java/ro/rophotokml/app/MainActivity.java")
+        lines"'
     - name: Add permissions to AndroidManifest
       run: 'M="android/app/src/main/AndroidManifest.xml"
 
