@@ -549,7 +549,22 @@ function loadState(){
 }
 
 // ── MAP ──
-map=L.map('map',{center:[47.65,23.58],zoom:13,zoomControl:false,attributionControl:false});
+map=L.map('map',{center:[47.65,23.58],zoom:13,zoomControl:false,attributionControl:false,tap:true,tapTolerance:15});
+// Fallback: click pe harta deschide popup pentru parcela cea mai apropiata
+map.on('click',function(e){
+  if(!feats.length)return;
+  const clickLat=e.latlng.lat, clickLon=e.latlng.lng;
+  // Verifica daca click-ul e in interiorul unui poligon
+  for(let i=0;i<polyL.length;i++){
+    const pl=polyL[i];
+    if(!pl.ly||!map.hasLayer(pl.ly))continue;
+    if(pip(clickLat,clickLon,pl.f._c)){
+      selParcel(pl.f,pl.ly,pl.i);
+      return;
+    }
+  }
+});
+
 const lSat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:21,maxNativeZoom:19});
 const lOSM=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:21,maxNativeZoom:19});
 lSat.addTo(map);
@@ -887,6 +902,7 @@ function drawKMLLayer(k){
       mk=L.marker(f._ctr,{icon:ico,interactive:false}).addTo(map);
     }
     ly.on('click',()=>selParcel(f,ly,i));
+    ly.on('touchend',function(e){L.DomEvent.stopPropagation(e);selParcel(f,ly,i);});
     ly._feat=f;ly._kmlId=k.id;
     ly.addTo(map);
     polyL.push({ly,mk,f,i,_kmlId:k.id});
