@@ -1233,9 +1233,7 @@ function onSrch(v){
   if(!hits.length){box.style.display='none';return;}
   box.innerHTML=hits.map(h=>'<div class="si" onclick="srchSel('+feats.indexOf(h)+')">'+ex(lbl(h))+'</div>').join('');
   box.style.display='block';
-}
-function srchSel(i){const f=feats[i];const pl=polyL.find(p=>p.f===f);if(pl)selParcel(f,pl.ly,pl.i);document.getElementById('sb').value='';document.getElementById('sdrop').style.display='none';}
-document.addEventListener('click',e=>{if(!e.target.closest('#sb')&&!e.target.closest('#sdrop'))document.getElementById('sdrop').style.display='none';});
+}document.addEventListener('click',e=>{if(!e.target.closest('#sb')&&!e.target.closest('#sdrop'))document.getElementById('sdrop').style.display='none';});
 
 function updChip(){
   if(!curF){document.getElementById('pchip').classList.remove('show');return;}
