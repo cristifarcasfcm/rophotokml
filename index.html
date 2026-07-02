@@ -462,7 +462,7 @@ canvas{display:none}
     <div id="spl-pct">0%</div>
   </div>
   <div id="spl-ti">ROPhotoKml</div>
-  <div id="spl-su">GPS · KML · APIA Maramures</div>
+  <div id="spl-su">GPS · KML · APIA</div>
 </div>
 
 <div id="prog"><div class="spin"></div><p id="prog-txt">Se proceseaza...</p></div>
@@ -514,12 +514,7 @@ function handleBack(){
   ];
   for(const [id,fn] of layers){
     const el=document.getElementById(id);
-    if(el&&el.classList.contains('on'||'show')){
-      window[fn]&&window[fn]();
-      return;
-    }
-    // also check .show
-    if(el&&el.classList.contains('show')){
+    if(el&&(el.classList.contains('on')||el.classList.contains('show'))){
       window[fn]&&window[fn]();
       return;
     }
@@ -1007,6 +1002,89 @@ function applyZoomCSS(){const v=document.getElementById('vid');v.style.transform
 })();
 
 // ── CAPTURE ──
+
+// ── GEO MATH ──
+function hav(la1,lo1,la2,lo2){
+  const R=6371000,dLa=(la2-la1)*Math.PI/180,dLo=(lo2-lo1)*Math.PI/180;
+  const a=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dLo/2)*Math.sin(dLo/2);
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+function pip(la,lo,cs){
+  let ins=false;
+  for(let i=0,j=cs.length-1;i<cs.length;j=i++){
+    const xi=cs[i][0],yi=cs[i][1],xj=cs[j][0],yj=cs[j][1];
+    if((yi>lo)!==(yj>lo)&&la<(xj-xi)*(lo-yi)/(yj-yi)+xi)ins=!ins;
+  }
+  return ins;
+}
+function dseg(la,lo,la1,lo1,la2,lo2){
+  const dx=la2-la1,dy=lo2-lo1,t=dx||dy?Math.max(0,Math.min(1,((la-la1)*dx+(lo-lo1)*dy)/(dx*dx+dy*dy))):0;
+  return hav(la,lo,la1+t*dx,lo1+t*dy);
+}
+function d2poly(la,lo,cs){
+  let d=Infinity;
+  for(let i=0,j=cs.length-1;i<cs.length;j=i++)d=Math.min(d,dseg(la,lo,cs[j][0],cs[j][1],cs[i][0],cs[i][1]));
+  return pip(la,lo,cs)?0:d;
+}
+
+// ── EXIF BUILDER ──
+function buildEXIF(dtStr,lat,lon,alt,hdg){
+  function ui16(v){return [v>>8&255,v&255];}
+  function ui32(v){return [v>>24&255,v>>16&255,v>>8&255,v&255];}
+  function rational(n,d){return [...ui32(n),...ui32(d)];}
+  function ascii(s){const b=[];for(let i=0;i<s.length;i++)b.push(s.charCodeAt(i));b.push(0);return b;}
+  function ifd(tag,type,count,valOrOff){
+    return [...ui16(tag),...ui16(type),...ui32(count),...ui32(valOrOff)];
+  }
+  const TIFF_HEADER=[0x4D,0x4D,0x00,0x2A,0x00,0x00,0x00,0x08];
+  const GPS_IFD_OFFSET=8+2+12*6+4; // after main IFD
+  // Main IFD - 6 entries
+  const nMain=6;
+  const mainEntries=[
+    ...ifd(0x010E,2,11,0),    // ImageDescription placeholder
+    ...ifd(0x0131,2,8,0),     // Software
+    ...ifd(0x0132,2,20,0),    // DateTime
+    ...ifd(0x013B,2,11,0),    // Artist
+    ...ifd(0x8769,4,1,0),     // ExifIFD placeholder
+    ...ifd(0x8825,4,1,GPS_IFD_OFFSET), // GPS IFD
+  ];
+  const dtBytes=ascii(dtStr||'2026:01:01 00:00:00');
+  const nGPS=6;
+  const absLat=lat?Math.abs(lat):0,absLon=lon?Math.abs(lon):0;
+  const latD=Math.floor(absLat),latM=Math.floor((absLat-latD)*60),latS=Math.round(((absLat-latD)*60-latM)*60*100);
+  const lonD=Math.floor(absLon),lonM=Math.floor((absLon-lonD)*60),lonS=Math.round(((absLon-lonD)*60-lonM)*60*100);
+  const gpsData=[
+    ...ifd(0x0000,1,4,0x02020000), // GPSVersionID
+    ...ifd(0x0001,2,2,lat>=0?0x4E000000:0x53000000), // LatRef N/S
+    ...ifd(0x0002,5,3,0),  // Latitude rational - offset filled below
+    ...ifd(0x0003,2,2,lon>=0?0x45000000:0x57000000), // LonRef E/W
+    ...ifd(0x0004,5,3,0),  // Longitude rational - offset filled below
+    ...ifd(0x0005,1,1,alt!=null&&alt>=0?0x00000000:0x01000000), // AltRef
+  ];
+  const latRat=[...rational(latD,1),...rational(latM,1),...rational(latS,100)];
+  const lonRat=[...rational(lonD,1),...rational(lonM,1),...rational(lonS,100)];
+  // Build GPS IFD properly
+  const gpsIFDStart=GPS_IFD_OFFSET;
+  const gpsDataOffset=gpsIFDStart+2+nGPS*12+4;
+  let gpsIFD=[...ui16(nGPS)];
+  gpsIFD=[...gpsIFD,...ifd(0x0000,1,4,0x02020000)];
+  gpsIFD=[...gpsIFD,...ifd(0x0001,2,2,lat!=null&&lat>=0?0x4E000000:0x53000000)];
+  gpsIFD=[...gpsIFD,...ifd(0x0002,5,3,gpsDataOffset)];
+  gpsIFD=[...gpsIFD,...ifd(0x0003,2,2,lon!=null&&lon>=0?0x45000000:0x57000000)];
+  gpsIFD=[...gpsIFD,...ifd(0x0004,5,3,gpsDataOffset+24)];
+  const altVal=alt!=null?Math.round(Math.abs(alt)*100):0;
+  gpsIFD=[...gpsIFD,...ifd(0x0006,5,1,gpsDataOffset+48)];
+  gpsIFD=[...gpsIFD,...ui32(0)]; // next IFD = 0
+  const gpsValues=[...latRat,...lonRat,...rational(altVal,100)];
+  const payload=[...gpsIFD,...gpsValues];
+  // Wrap in APP1
+  const exifHeader=[0x45,0x78,0x69,0x66,0x00,0x00];
+  const tiffAndGPS=[...TIFF_HEADER,...payload];
+  const app1Data=[...exifHeader,...tiffAndGPS];
+  const len=app1Data.length+2;
+  return new Uint8Array([0xFF,0xE1,(len>>8)&0xFF,len&0xFF,...app1Data]);
+}
+
 function doCapture(){
   const vid=document.getElementById('vid');
   if(!vid.videoWidth){toast('Camera nu e gata','wn');return;}
@@ -1122,543 +1200,6 @@ function saveP(){
 function discardP(){document.getElementById('prevo').classList.remove('show');document.getElementById('camo').classList.add('show');}
 
 // ── GALLERY ──
-
-// ── GALLERY ──
-function openGallery(){
-  const g=document.getElementById('galg');g.innerHTML='';
-  if(!gallery.length){g.innerHTML='<div style="grid-column:1/-1;padding:40px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:11px">Nicio fotografie in aceasta sesiune.</div>';}
-  else{gallery.forEach((p,i)=>{const d=document.createElement('div');d.className='gt';d.innerHTML='<img src="data:image/jpeg;base64,'+p.b64+'" onclick="openFull('+i+')" loading="lazy"><button class="gd" onclick="delPhoto('+i+')">✕</button>';g.appendChild(d);});}
-  document.getElementById('galo').classList.add('show');
-}
-function closeGallery(){document.getElementById('galo').classList.remove('show');}
-function openFull(i){document.getElementById('fullimg').src='data:image/jpeg;base64,'+gallery[i].b64;document.getElementById('fvname').textContent=gallery[i].name;document.getElementById('fullview').classList.add('show');}
-function closeFull(){document.getElementById('fullview').classList.remove('show');}
-function delPhoto(i){if(!confirm('Stergi?'))return;gallery.splice(i,1);openGallery();}
-function discardP(){document.getElementById('prevo').classList.remove('show');openCam();}
-
-// ── EXPORT ──
-function openExport(){document.getElementById('exp-ov').classList.add('on');document.getElementById('exp-box').classList.add('on');}
-function closeExport(){document.getElementById('exp-ov').classList.remove('on');document.getElementById('exp-box').classList.remove('on');}
-function doExport(fmt){
-  closeExport();
-  const fc={type:'FeatureCollection',features:feats.map(f=>({type:'Feature',
-    properties:Object.fromEntries(Object.entries(f).filter(([k])=>!k.startsWith('_'))),
-    geometry:f._c.length>=3?{type:'Polygon',coordinates:[[...f._c.map(c=>[c[1],c[0]]),f._c.length?[f._c[0][1],f._c[0][0]]:[]]]}:null
-  })).filter(f=>f.geometry)};
-  let content,name,mime;
-  if(fmt==='kml'){
-    let kml='<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document>\n';
-    fc.features.forEach(f=>{
-      const n=f.properties.__nm__||Object.values(f.properties)[0]||'';
-      const coords=f.geometry.coordinates[0].map(c=>c[0]+','+c[1]+',0').join('\n');
-      kml+='<Placemark><name>'+n+'</name><Polygon><outerBoundaryIs><LinearRing><coordinates>'+coords+'</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>\n';
-    });
-    kml+='</Document></kml>';
-    content=kml;name=kmlName+'_export.kml';mime='application/vnd.google-earth.kml+xml';
-  }else if(fmt==='geojson'){
-    content=JSON.stringify(fc,null,2);name=kmlName+'_export.geojson';mime='application/geo+json';
-  }else{
-    let gpx='<?xml version="1.0"?>\n<gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1">\n';
-    fc.features.forEach(f=>{
-      gpx+='<trk><name>'+(f.properties.__nm__||'')+'</name><trkseg>\n';
-      f.geometry.coordinates[0].forEach(c=>{gpx+='<trkpt lat="'+c[1]+'" lon="'+c[0]+'"></trkpt>\n';});
-      gpx+='</trkseg></trk>\n';
-    });
-    gpx+='</gpx>';
-    content=gpx;name=kmlName+'_export.gpx';mime='application/gpx+xml';
-  }
-  const blob=new Blob([content],{type:mime}),url=URL.createObjectURL(blob),a=document.createElement('a');
-  a.href=url;a.download=name;document.body.appendChild(a);a.click();
-  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},2000);
-  toast('Exportat: '+name,'ok');
-}
-
-// ── UTILS ──
-function centerMap(){if(lat)map.setView([lat,lon],18);else toast('Activeaza GPS','wn');}
-function showProg(m){document.getElementById('prog-txt').textContent=m;document.getElementById('prog').classList.add('show');}
-function hideProg(){document.getElementById('prog').classList.remove('show');}
-function toast(msg,type){const el=document.getElementById('tst');el.textContent=msg;el.className=type;el.style.display='block';clearTimeout(el._t);el._t=setTimeout(()=>el.style.display='none',4000);}
-
-function hav(a1,o1,a2,o2){
-  const R=6371000,da=(a2-a1)*Math.PI/180,doo=(o2-o1)*Math.PI/180;
-  const s=Math.sin(da/2)**2+Math.cos(a1*Math.PI/180)*Math.cos(a2*Math.PI/180)*Math.sin(doo/2)**2;
-  return R*2*Math.atan2(Math.sqrt(s),Math.sqrt(1-s));
-}
-function pip(la,lo,cs){let ins=false;for(let i=0,j=cs.length-1;i<cs.length;j=i++){const xi=cs[i][0],yi=cs[i][1],xj=cs[j][0],yj=cs[j][1];if((yi>lo)!==(yj>lo)&&la<(xj-xi)*(lo-yi)/(yj-yi)+xi)ins=!ins;}return ins;}
-function dseg(la,lo,a,b){const dx=b[0]-a[0],dy=b[1]-a[1];if(!dx&&!dy)return hav(la,lo,a[0],a[1]);const t=Math.max(0,Math.min(1,((la-a[0])*dx+(lo-a[1])*dy)/(dx*dx+dy*dy)));return hav(la,lo,a[0]+t*dx,a[1]+t*dy);}
-function d2poly(la,lo,cs){if(pip(la,lo,cs))return 0;let m=Infinity;for(let i=0;i<cs.length-1;i++){const d=dseg(la,lo,cs[i],cs[i+1]);if(d<m)m=d;}return m;}
-
-function onSrch(v){
-  const box=document.getElementById('sdrop');
-  if(!v.trim()||!feats.length){box.style.display='none';return;}
-  const q=v.toLowerCase();
-  const hits=feats.filter(f=>Object.values(f).some(val=>typeof val==='string'&&val.toLowerCase().includes(q))).slice(0,10);
-  if(!hits.length){box.style.display='none';return;}
-  box.innerHTML=hits.map(h=>'<div class="si" onclick="srchSel('+feats.indexOf(h)+')">'+ex(lbl(h))+'</div>').join('');
-  box.style.display='block';
-}document.addEventListener('click',e=>{if(!e.target.closest('#sb')&&!e.target.closest('#sdrop'))document.getElementById('sdrop').style.display='none';});
-
-function updChip(){
-  if(!curF){document.getElementById('pchip').classList.remove('show');return;}
-  document.getElementById('pchip').classList.add('show');
-  document.getElementById('pcid').textContent=lbl(curF);
-  let meta='';
-  if(lat&&curF._ctr){const d=hav(lat,lon,curF._ctr[0],curF._ctr[1]);meta='Distanta: '+(d<1000?Math.round(d)+' m':(d/1000).toFixed(2)+' km');}
-  document.getElementById('pcmt').textContent=meta;
-}
-function updSt(){
-  const pd=n=>String(n).padStart(2,'0');const now=new Date();
-  const dataFmt=pd(now.getDate())+'/'+pd(now.getMonth()+1)+'/'+now.getFullYear();
-  const dataOra=dataFmt+' '+pd(now.getHours())+':'+pd(now.getMinutes());
-  const parcelId=(curF&&selField&&curF[selField])?curF[selField]:(curF&&curF['__nm__']?curF['__nm__']:'— Parcela neselectata —');
-  const s2val=document.getElementById('pcfs2')?document.getElementById('pcfs2').value:'';
-  const culturaVal=(curF&&s2val&&curF[s2val])?curF[s2val]:'';
-  const uatDisp=cachedUAT||(lat?'se detecteaza...':'—');
-  const orientare=hdg!=null?cdir(hdg):'—';
-  // Update stamp vizibil in camera
-  document.getElementById('vsi').textContent=parcelId;
-  document.getElementById('vsk').textContent=culturaVal?'Cultura declarata: '+culturaVal:'KML: '+kmlName;
-  document.getElementById('vsc').textContent=lat?lat.toString()+', '+lon.toString():'—';
-  document.getElementById('vsa').textContent='Altitudine: '+(alt!=null?alt.toString():'—');
-  document.getElementById('vsd').textContent=(uatDisp||'—')+' Orientare: '+orientare;
-}
-setInterval(()=>{updSt();if(gpsOn)chkProx();updChip();},1000);
-
-function loadLogo(inp){
-  const f=inp.files[0];if(!f)return;
-  const r=new FileReader();
-  r.onload=e=>{logoUrl=e.target.result;document.getElementById('blogo').classList.add('on');
-    const ov=document.getElementById('logov');ov.src=logoUrl;ov.style.display='block';toast('Logo incarcat','ok');};
-  r.readAsDataURL(f);
-}
-function toggleCam(){
-  const btn=document.getElementById('bcam');
-  if(!camOn){
-    startCamWithZoom(1.0);
-  }else{
-    if(mStream)mStream.getTracks().forEach(t=>t.stop());
-    camOn=false;btn.classList.remove('on');closeCam();
-    document.getElementById('sht').disabled=true;document.getElementById('sht').classList.remove('rdy');
-  }
-}
-
-function startCamWithZoom(zoomFactor){
-  const btn=document.getElementById('bcam');
-  if(mStream)mStream.getTracks().forEach(t=>t.stop());
-  navigator.mediaDevices.getUserMedia({
-    video:{facingMode:{ideal:'environment'},width:{ideal:4096},height:{ideal:2160}},
-    audio:false
-  }).then(s=>{
-    mStream=s;
-    const vid=document.getElementById('vid');
-    vid.srcObject=s;vid.style.transform='';
-    camOn=true;btn.classList.add('on');chkProx();
-    currentZoomLevel=zoomFactor;
-    const sl=document.getElementById('zoom-slider');
-    if(sl)sl.value=zoomFactor;
-    document.getElementById('zoom-val').textContent=zoomFactor.toFixed(1)+'×';
-    toast('Camera pornita','ok');
-  }).catch(e=>{toast('Camera eroare: '+e.name,'er');});
-}
-
-// ── ZOOM SLIDER ──
-function onZoomSlider(val){
-  const z=parseFloat(val);
-  currentZoomLevel=z;
-  document.getElementById('zoom-val').textContent=z.toFixed(1)+'×';
-  applyZoom(z);
-}
-
-function applyZoom(z){
-  if(!camOn||!mStream)return;
-  const track=mStream.getVideoTracks()[0];
-  if(!track)return;
-  // Proba zoom nativ
-  if(track.getCapabilities){
-    const caps=track.getCapabilities();
-    if(caps.zoom){
-      const minZ=caps.zoom.min||1;
-      const maxZ=caps.zoom.max||10;
-      const cz=Math.max(minZ,Math.min(maxZ,z));
-      // Actualizeaza slider max cu zoom maxim real
-      const sl=document.getElementById('zoom-slider');
-      if(sl&&parseFloat(sl.max)<maxZ){sl.max=maxZ;}
-      track.applyConstraints({advanced:[{zoom:cz}]}).catch(()=>applyZoomCSS(z));
-      return;
-    }
-  }
-  applyZoomCSS(z);
-}
-
-function applyZoomCSS(z){
-  const vid=document.getElementById('vid');
-  vid.style.transform='scale('+z+')';
-  vid.style.transformOrigin='center center';
-}
-
-// Pinch-to-zoom pe video
-(function(){
-  let initDist=0,initZoom=1;
-  document.getElementById('vid').addEventListener('touchstart',e=>{
-    if(e.touches.length===2){
-      initDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,
-                          e.touches[0].clientY-e.touches[1].clientY);
-      initZoom=currentZoomLevel;
-    }
-  },{passive:true});
-  document.getElementById('vid').addEventListener('touchmove',e=>{
-    if(e.touches.length===2){
-      e.preventDefault();
-      const dist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,
-                             e.touches[0].clientY-e.touches[1].clientY);
-      const ratio=dist/initDist;
-      const newZ=Math.max(1,Math.min(10,initZoom*ratio));
-      currentZoomLevel=newZ;
-      const sl=document.getElementById('zoom-slider');
-      if(sl)sl.value=newZ;
-      document.getElementById('zoom-val').textContent=newZ.toFixed(1)+'×';
-      applyZoom(newZ);
-    }
-  },{passive:false});
-})();
-
-function openCam(){
-  if(!camOn){toast('Porneste camera mai intai','wn');return;}
-  document.getElementById('camo').classList.add('show');
-  // Detecteaza zoom maxim disponibil si seteaza slider
-  if(mStream){
-    const track=mStream.getVideoTracks()[0];
-    if(track&&track.getCapabilities){
-      const caps=track.getCapabilities();
-      if(caps.zoom){
-        const sl=document.getElementById('zoom-slider');
-        if(sl){sl.min=caps.zoom.min||1;sl.max=caps.zoom.max||10;sl.value=currentZoomLevel;}
-      }
-    }
-  }
-}
-function closeCam(){document.getElementById('camo').classList.remove('show');}
-
-// ══════════════════════════════════════════════════
-// EXIF BUILDER — WGS84, little-endian TIFF
-// Coordonate in format decimal: 47.123456, 23.123456
-// Convertite intern in DMS pentru EXIF standard
-// ══════════════════════════════════════════════════
-function buildEXIF(dtStr, latV, lonV, altV, hdgV) {
-  const B = [];
-  function u16(v){ B.push(v&0xFF,(v>>8)&0xFF); }
-  function u32(v){ B.push(v&0xFF,(v>>8)&0xFF,(v>>16)&0xFF,(v>>24)&0xFF); }
-  function u16be(v){ return [(v>>8)&0xFF,v&0xFF]; }
-  function asc(s){ for(let i=0;i<s.length;i++)B.push(s.charCodeAt(i)&0xFF);B.push(0); }
-  function pad(to){ while(B.length<to)B.push(0); }
-
-  // Convert decimal degrees WGS84 to DMS rationals (24 bytes = 3 RATIONALs)
-  function dms(deg){
-    const a=Math.abs(deg);
-    const d=Math.floor(a);
-    const mf=(a-d)*60;
-    const m=Math.floor(mf);
-    const s=(mf-m)*60;
-    const sN=Math.round(s*1000000); // microseconds precision
-    const sD=1000000;
-    // d/1, m/1, sN/sD
-    return [d,1, m,1, sN,sD]; // 3 pairs → 6 u32 values → 24 bytes
-  }
-
-  // Fixed layout:
-  // 0..7   TIFF header
-  // 8..61  IFD0 (4 entries = 2+4*12+4 = 54 bytes)
-  // 62..81 DateTime ASCII (20 bytes)
-  // 82..111 ExifIFD (2 entries = 2+2*12+4 = 30 bytes)
-  // 112..131 DateTimeOriginal
-  // 132..151 DateTimeDigitized
-  // 152..   GPS IFD
-
-  const IFD0=8, DT_D=62, EXIF_IFD=82, DTO_D=112, DTG_D=132, GPS_IFD=152;
-
-  // TIFF header
-  B.push(0x49,0x49,0x2A,0x00);u32(IFD0); // II + magic + IFD0 offset
-
-  // IFD0 at offset 8 — 4 entries
-  u16(4); // entry count
-  // DateTime 0x0132 ASCII 20
-  u16(0x0132);u16(2);u32(20);u32(DT_D);
-  // Make 0x010F ASCII 4 inline
-  u16(0x010F);u16(2);u32(4);B.push(82,80,75,0); // 'RPK\0'
-  // ExifIFD 0x8769 LONG
-  u16(0x8769);u16(4);u32(1);u32(EXIF_IFD);
-  // GPS IFD 0x8825 LONG
-  u16(0x8825);u16(4);u32(1);u32(GPS_IFD);
-  u32(0); // next IFD=0
-
-  // DateTime at 62
-  pad(DT_D); asc(dtStr); // 20 bytes
-
-  // ExifIFD at 82
-  pad(EXIF_IFD);
-  u16(2);
-  u16(0x9003);u16(2);u32(20);u32(DTO_D);  // DateTimeOriginal
-  u16(0x9291);u16(2);u32(20);u32(DTG_D);  // DateTimeDigitized
-  u32(0);
-
-  // DateTimeOriginal at 112
-  pad(DTO_D); asc(dtStr);
-  // DateTimeDigitized at 132
-  pad(DTG_D); asc(dtStr);
-
-  // GPS IFD at 152 — dynamic entries
-  pad(GPS_IFD);
-  const gpsEntries=[];
-  const gpsHeap=[];
-
-  function heapRat(n,d){ const o=gpsHeap.length; const a=[];const push32=(v,ar)=>{ar.push(v&0xFF,(v>>8)&0xFF,(v>>16)&0xFF,(v>>24)&0xFF);};push32(n,gpsHeap);push32(d,gpsHeap);return o;}
-  function heapDMS(deg){
-    const vals=dms(deg);const o=gpsHeap.length;
-    for(let i=0;i<6;i+=2){const n=vals[i],d=vals[i+1];gpsHeap.push(n&0xFF,(n>>8)&0xFF,(n>>16)&0xFF,(n>>24)&0xFF,d&0xFF,(d>>8)&0xFF,(d>>16)&0xFF,(d>>24)&0xFF);}
-    return o;
-  }
-
-  if(latV!=null&&lonV!=null){
-    gpsEntries.push({tag:0x0000,type:1,count:4,inline:[2,3,0,0]}); // GPSVersionID
-    gpsEntries.push({tag:0x0001,type:2,count:2,inline:[latV>=0?78:83,0,0,0]}); // LatRef N/S
-    gpsEntries.push({tag:0x0002,type:5,count:3,heap:heapDMS(latV)}); // Lat DMS
-    gpsEntries.push({tag:0x0003,type:2,count:2,inline:[lonV>=0?69:87,0,0,0]}); // LonRef E/W
-    gpsEntries.push({tag:0x0004,type:5,count:3,heap:heapDMS(lonV)}); // Lon DMS
-  }
-  if(altV!=null){
-    gpsEntries.push({tag:0x0005,type:1,count:1,inline:[altV>=0?0:1,0,0,0]});
-    gpsEntries.push({tag:0x0006,type:5,count:1,heap:heapRat(Math.round(Math.abs(altV)*100),100)});
-  }
-  if(hdgV!=null){
-    gpsEntries.push({tag:0x0010,type:2,count:2,inline:[84,0,0,0]}); // 'T\0' True heading
-    gpsEntries.push({tag:0x0011,type:5,count:1,heap:heapRat(Math.round(hdgV*100),100)});
-  }
-
-  // GPS IFD size = 2 + N*12 + 4
-  const GPS_HEAP_BASE = GPS_IFD + 2 + gpsEntries.length*12 + 4;
-
-  u16(gpsEntries.length);
-  gpsEntries.forEach(e=>{
-    u16(e.tag);u16(e.type);u32(e.count);
-    if(e.inline!==undefined){B.push(...e.inline.slice(0,4));}
-    else{u32(GPS_HEAP_BASE+e.heap);}
-  });
-  u32(0); // next GPS IFD=0
-  B.push(...gpsHeap);
-
-  // Wrap in APP1
-  const exifH=[0x45,0x78,0x69,0x66,0x00,0x00];
-  const app1Body=[...exifH,...B];
-  const lenBytes=u16be(app1Body.length+2);
-  return new Uint8Array([0xFF,0xE1,...lenBytes,...app1Body]);
-}
-
-
-// ── CAPTURE — format referinta (Conota style) ──
-function doCapture(){
-  const vid=document.getElementById('vid');
-  if(!vid.videoWidth){toast('Camera nu e gata','wn');return;}
-  showProg('Se captureaza...');
-  const w=vid.videoWidth,h=vid.videoHeight;
-  const cnv=document.getElementById('cnv');
-  cnv.width=w;cnv.height=h;
-  const ctx=cnv.getContext('2d');
-  ctx.drawImage(vid,0,0,w,h);
-
-  const pd=n=>String(n).padStart(2,'0');
-  const now=new Date();
-  const dtExif=now.getFullYear()+':'+pd(now.getMonth()+1)+':'+pd(now.getDate())+' '+pd(now.getHours())+':'+pd(now.getMinutes())+':'+pd(now.getSeconds());
-
-  // Parcela ID (ex: RO004648125.6.2)
-  const parcelId=(curF&&selField&&curF[selField])?curF[selField]:(curF&&curF['__nm__']?curF['__nm__']:'');
-  // Filename
-  const pid=parcelId.replace(/[^a-zA-Z0-9_\-]/g,'_').substring(0,60);
-  lastFname=pid+'_'+(pCnt+1)+'.jpg';
-
-  // Date pentru text overlay
-  const dtFmt=pd(now.getDate())+'.'+pd(now.getMonth()+1)+'.'+now.getFullYear();
-  const timeFmt=pd(now.getHours())+':'+pd(now.getMinutes());
-  const latStr=lat?lat.toFixed(5):'—';
-  const lonStr=lon?lon.toFixed(5):'—';
-  const accStr=acc?'(±'+Math.round(acc)+'m)':'';
-  const altStr=alt!=null?Math.round(alt)+'m':'—';
-  const orientare=hdg!=null?cdir(hdg):'—';
-
-  // ── OVERLAY TEXT (bottom-left, stil Conota) ──
-  const fs=Math.max(20,Math.round(h*0.025));
-  const pp=Math.round(fs*0.6);
-  const lh=Math.round(fs*1.55);
-
-  // Al doilea camp selectat
-  const s2el=document.getElementById('pcfs2');
-  const field2=s2el?s2el.value:'';
-  const field2val=(field2&&curF&&curF[field2]&&curF[field2]!==parcelId)?curF[field2]:'';
-
-  const lines=[
-    parcelId,
-    field2val,
-    kmlName||'',
-    dtFmt+' '+timeFmt,
-    latStr+', '+lonStr+' '+accStr,
-    'Altitude: '+altStr,
-    cachedUAT||'',
-  ].filter(l=>l!=='');
-
-  // Calculeaza dimensiunea box-ului de text
-  ctx.font=fs+'px Arial,sans-serif';
-  let maxW=0;
-  lines.forEach(l=>{const m=ctx.measureText(l).width;if(m>maxW)maxW=m;});
-  const boxW=maxW+pp*2;
-  const boxH=lines.length*lh+pp*2;
-  const boxX=pp/2;
-  const boxY=h-boxH-pp/2;
-
-  // ── LOGO APIA (stanga jos, deasupra textului) ──
-  const logoSize=Math.round(h*0.14); // ~14% din inaltime
-  const logoX=pp/2;
-  const logoY=boxY-logoSize-pp/2;
-
-  const finishWithLogo=(logoImg)=>{
-    // Deseneaza logo
-    if(logoImg){
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(logoX+logoSize/2,logoY+logoSize/2,logoSize/2,0,Math.PI*2);
-      ctx.closePath();
-      ctx.clip();
-      ctx.drawImage(logoImg,logoX,logoY,logoSize,logoSize);
-      ctx.restore();
-    }
-
-    // ── TEXT BOX semitransparent ──
-    ctx.fillStyle='rgba(0,0,0,0.52)';
-    ctx.fillRect(boxX,boxY,boxW,boxH);
-
-    ctx.font=fs+'px Arial,sans-serif';
-    ctx.fillStyle='#ffffff';
-    lines.forEach((line,i)=>{
-      ctx.fillText(line,boxX+pp,boxY+pp+fs+i*lh);
-    });
-
-    // ── ORIENTARE (colt dreapta jos) — sageata + text ──
-    const arrowSize=Math.round(h*0.07);
-    const arrowX=w-arrowSize-pp;
-    const arrowY=h-arrowSize*2-pp;
-    drawCompassArrow(ctx,arrowX+arrowSize/2,arrowY+arrowSize/2,arrowSize/2,hdg||0,orientare);
-
-    finishCapture();
-  };
-
-  // Incarca logo APIA
-  const logoImg=new Image();
-  logoImg.onload=()=>finishWithLogo(logoImg);
-  logoImg.onerror=()=>finishWithLogo(null);
-  logoImg.src=APIA_LOGO;
-
-  function drawCompassArrow(ctx,cx,cy,r,angleDeg,label){
-    const rad=(angleDeg-90)*Math.PI/180;
-    // Cerc fundal
-    ctx.save();
-    ctx.fillStyle='rgba(0,0,0,0.45)';
-    ctx.beginPath();ctx.arc(cx,cy,r+6,0,Math.PI*2);ctx.fill();
-    // Sageata nord (alba)
-    ctx.translate(cx,cy);ctx.rotate(rad);
-    ctx.beginPath();
-    ctx.moveTo(0,-r*0.9);
-    ctx.lineTo(r*0.3,r*0.5);
-    ctx.lineTo(0,r*0.2);
-    ctx.lineTo(-r*0.3,r*0.5);
-    ctx.closePath();
-    ctx.fillStyle='#ffffff';ctx.fill();
-    ctx.restore();
-    // Label directie
-    ctx.font='bold '+Math.round(r*0.65)+'px Arial';
-    ctx.fillStyle='#ffffff';
-    ctx.textAlign='center';
-    ctx.fillText(label,cx,cy+r+Math.round(r*0.9));
-    ctx.textAlign='left';
-  }
-
-  function finishCapture(){
-    showProg('Se aplica EXIF WGS84...');
-    try{
-      const dataURL=cnv.toDataURL('image/jpeg',0.95);
-      const b64=dataURL.split(',')[1];
-      const binStr=atob(b64);
-      const orig=new Uint8Array(binStr.length);
-      for(let i=0;i<binStr.length;i++)orig[i]=binStr.charCodeAt(i);
-      let skip=2;
-      while(skip<orig.length-3&&orig[skip]===0xFF){
-        const mt=orig[skip+1];
-        if(mt>=0xE0&&mt<=0xEF){const ml=(orig[skip+2]<<8)|orig[skip+3];skip+=2+ml;}
-        else break;
-      }
-      const app1=buildEXIF(dtExif,lat,lon,alt,hdg);
-      const out=new Uint8Array(2+app1.length+orig.length-skip);
-      out[0]=0xFF;out[1]=0xD8;out.set(app1,2);out.set(orig.slice(skip),2+app1.length);
-      let bin='';const cs=8192;
-      for(let i=0;i<out.length;i+=cs)bin+=String.fromCharCode(...out.slice(i,i+cs));
-      lastB64=btoa(bin);
-      showPreview('data:image/jpeg;base64,'+lastB64);
-    }catch(err){
-      lastB64=cnv.toDataURL('image/jpeg',0.95).split(',')[1];
-      showPreview('data:image/jpeg;base64,'+lastB64);
-    }
-  }
-}
-
-function showPreview(dataUrl){hideProg();document.getElementById('pimg').src=dataUrl;closeCam();document.getElementById('prevo').classList.add('show');}
-
-
-// ── SAVE ──
-function saveP(){
-  if(!lastB64){toast('Nu exista fotografie','er');return;}
-  showProg('Se salveaza...');
-
-  // Adauga in galeria sesiunii intotdeauna
-  pCnt++;
-  gallery.push({b64:lastB64,name:lastFname});
-  const b=document.getElementById('pbg');
-  b.style.display='block';b.textContent=pCnt+' foto';
-  document.getElementById('prevo').classList.remove('show');
-
-  // METODA 1: JavascriptInterface nativ Android (APK)
-  // AndroidPhotoSaver e injectat de MainActivity.java
-  if(window.AndroidPhotoSaver){
-    try{
-      const result = window.AndroidPhotoSaver.savePhoto(lastB64, lastFname);
-      hideProg();
-      if(result && result.startsWith('OK')){
-        toast('✓ Salvat in DCIM/ROPhotoKml','ok');
-      } else {
-        toast('Eroare Android: '+(result||'necunoscuta'),'er');
-      }
-      return;
-    }catch(e){
-      console.warn('AndroidPhotoSaver err:',e);
-    }
-  }
-
-  // METODA 2: download blob (browser web / fallback)
-  hideProg();
-  try{
-    const bin=atob(lastB64);
-    const arr=new Uint8Array(bin.length);
-    for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
-    const blob=new Blob([arr],{type:'image/jpeg'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;a.download=lastFname;a.style.display='none';
-    document.body.appendChild(a);a.click();
-    setTimeout(()=>{try{document.body.removeChild(a);}catch(e){}URL.revokeObjectURL(url);},3000);
-    toast('✓ Descarcat: '+lastFname,'ok');
-  }catch(e){
-    toast('Eroare salvare: '+e.message,'er');
-  }
-}
-function discardP(){document.getElementById('prevo').classList.remove('show');document.getElementById('camo').classList.add('show');}
-
-// ── GALLERY ──
 function openGallery(){
   const g=document.getElementById('galg');g.innerHTML='';
   if(!gallery.length){
@@ -1686,7 +1227,6 @@ function delPhoto(i){
   gallery.splice(i,1);openGallery();
 }
 
-function closeGallery(){document.getElementById('galo').classList.remove('show');}
 function openFull(i){document.getElementById('fullimg').src='data:image/jpeg;base64,'+gallery[i].b64;document.getElementById('fvname').textContent=gallery[i].name;document.getElementById('fullview').classList.add('show');history.pushState(null,'',location.href);}
 function closeFull(){document.getElementById('fullview').classList.remove('show');}
 function delPhoto(i){if(!confirm('Stergi?'))return;gallery.splice(i,1);openGallery();}
