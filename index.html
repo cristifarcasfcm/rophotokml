@@ -540,6 +540,22 @@ function runSplash(){
 }
 window.addEventListener('load',()=>setTimeout(runSplash,100));
 
+// Deschide KML primit prin Android Intent (tap pe fisier .kml din telefon)
+window.openKMLFromIntent = function(fileName, fileContent) {
+  try {
+    const id='k'+Date.now();
+    const name=fileName.replace(/\.kml$/i,'');
+    const entry={id,name,xml:fileContent,feats:null,allF:[],doneIds:[],vis:true};
+    kmlStore.push(entry);
+    parseKMLEntry(entry);
+    activateKML(id);
+    saveState();
+    toast('KML deschis: '+name,'ok');
+  } catch(e) {
+    toast('Eroare KML: '+e.message,'er');
+  }
+};
+
 // ── PERSIST ──
 function saveState(){
   try{
@@ -665,37 +681,66 @@ function parseKMLEntry(k){
   const parsed=[],fs=new Set();
   // Parse styles
   const styles={};
-  doc.querySelectorAll('Style').forEach(s=>{
+  Array.from(doc.getElementsByTagName('Style')).forEach(s=>{
     const id=s.getAttribute('id');if(!id)return;
-    const ps=s.querySelector('PolyStyle'),ls=s.querySelector('LineStyle');
+    const psa=s.getElementsByTagName('PolyStyle'),lsa=s.getElementsByTagName('LineStyle');
     let fc='#22c55e',sc='#22c55e',fo=0.12;
-    if(ps){const c=ps.querySelector('color');if(c){const abgr=c.textContent.trim();if(abgr.length===8){const a=parseInt(abgr.slice(0,2),16)/255,b=abgr.slice(2,4),g=abgr.slice(4,6),rv=abgr.slice(6,8);fc='#'+rv+g+b;fo=Math.min(.6,Math.max(.05,a*.6));}}}
-    if(ls){const c=ls.querySelector('color');if(c){const abgr=c.textContent.trim();if(abgr.length===8){const b=abgr.slice(2,4),g=abgr.slice(4,6),rv=abgr.slice(6,8);sc='#'+rv+g+b;}}}
+    if(psa.length>0){const ca=psa[0].getElementsByTagName('color');if(ca.length>0){const abgr=ca[0].textContent.trim();if(abgr.length===8){const a=parseInt(abgr.slice(0,2),16)/255,b=abgr.slice(2,4),g=abgr.slice(4,6),rv=abgr.slice(6,8);fc='#'+rv+g+b;fo=Math.min(.6,Math.max(.05,a*.6));}}}
+    if(lsa.length>0){const ca=lsa[0].getElementsByTagName('color');if(ca.length>0){const abgr=ca[0].textContent.trim();if(abgr.length===8){const b=abgr.slice(2,4),g=abgr.slice(4,6),rv=abgr.slice(6,8);sc='#'+rv+g+b;}}}
     styles['#'+id]={fc,sc,fo};
   });
   const smap={};
-  doc.querySelectorAll('StyleMap').forEach(sm=>{
+  Array.from(doc.getElementsByTagName('StyleMap')).forEach(sm=>{
     const id=sm.getAttribute('id');if(!id)return;
-    sm.querySelectorAll('Pair').forEach(p=>{
-      const key=p.querySelector('key'),url=p.querySelector('styleUrl');
-      if(key&&key.textContent.trim()==='normal'&&url)smap['#'+id]=url.textContent.trim();
+    Array.from(sm.getElementsByTagName('Pair')).forEach(p=>{
+      const keys=p.getElementsByTagName('key'),urls=p.getElementsByTagName('styleUrl');
+      if(keys.length>0&&keys[0].textContent.trim()==='normal'&&urls.length>0)
+        smap['#'+id]=urls[0].textContent.trim();
     });
   });
-  doc.querySelectorAll('Placemark').forEach(pm=>{
+  // getElementsByTagName ignora namespace - merge cu orice KML
+  const pms=doc.getElementsByTagName('Placemark');
+  Array.from(pms).forEach(pm=>{
     const f={_c:[],_ctr:null,_done:false,_sty:null};
-    pm.querySelectorAll('SimpleData').forEach(sd=>{const n=sd.getAttribute('name');f[n]=sd.textContent.trim();fs.add(n);});
-    pm.querySelectorAll('Data').forEach(d=>{const n=d.getAttribute('name');const v=d.querySelector('value');if(v){f[n]=v.textContent.trim();fs.add(n);}});
-    const ne=pm.querySelector('name');if(ne){f['__nm__']=ne.textContent.trim();fs.add('__nm__');}
-    const su=pm.querySelector('styleUrl');
-    if(su){let sid=su.textContent.trim();if(smap[sid])sid=smap[sid];if(styles[sid])f._sty=styles[sid];}
+    // SimpleData (in SchemaData/ExtendedData)
+    Array.from(pm.getElementsByTagName('SimpleData')).forEach(sd=>{
+      const n=sd.getAttribute('name');
+      if(n){f[n]=sd.textContent.trim();fs.add(n);}
+    });
+    // Data (format alternativ)
+    Array.from(pm.getElementsByTagName('Data')).forEach(d=>{
+      const n=d.getAttribute('name');
+      const vs=d.getElementsByTagName('value');
+      if(n&&vs.length>0){f[n]=vs[0].textContent.trim();fs.add(n);}
+    });
+    // Name element
+    const names=pm.getElementsByTagName('name');
+    if(names.length>0&&names[0].parentNode===pm){
+      f['__nm__']=names[0].textContent.trim();fs.add('__nm__');
+    }
+    // StyleUrl
+    const sus=pm.getElementsByTagName('styleUrl');
+    if(sus.length>0){
+      let sid=sus[0].textContent.trim();
+      if(smap[sid])sid=smap[sid];
+      if(styles[sid])f._sty=styles[sid];
+    }
+    // Coordinates
     const cs=[];
-    pm.querySelectorAll('coordinates').forEach(c=>{
+    Array.from(pm.getElementsByTagName('coordinates')).forEach(c=>{
       c.textContent.trim().split(/\s+/).forEach(t=>{
-        const p=t.split(',');if(p.length>=2){const lo=parseFloat(p[0]),la=parseFloat(p[1]);if(!isNaN(lo)&&!isNaN(la))cs.push([la,lo]);}
+        const p=t.split(',');
+        if(p.length>=2){
+          const lo=parseFloat(p[0]),la=parseFloat(p[1]);
+          if(!isNaN(lo)&&!isNaN(la))cs.push([la,lo]);
+        }
       });
     });
     f._c=cs;
-    if(cs.length){const las=cs.map(c=>c[0]),los=cs.map(c=>c[1]);f._ctr=[(Math.min(...las)+Math.max(...las))/2,(Math.min(...los)+Math.max(...los))/2];}
+    if(cs.length){
+      const las=cs.map(c=>c[0]),los=cs.map(c=>c[1]);
+      f._ctr=[(Math.min(...las)+Math.max(...las))/2,(Math.min(...los)+Math.max(...los))/2];
+    }
     if(k.doneIds&&k.doneIds.includes(fid(f)))f._done=true;
     parsed.push(f);
   });
