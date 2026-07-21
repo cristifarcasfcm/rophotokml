@@ -847,18 +847,35 @@ function doFinalize(){
 }
 
 function openAW(){
-  if(!curF)return;
-  const b=document.getElementById('aw-bd');b.innerHTML='';
-  document.getElementById('aw-ti').textContent=lbl(curF)||'Atribute';
+  if(!curF){toast('Selecteaza o parcela mai intai','wn');return;}
+  const b=document.getElementById('aw-bd');
+  if(!b){toast('Eroare UI atribute','er');return;}
+  b.innerHTML='';
+  const title=lbl(curF)||curF['__nm__']||'Atribute parcela';
+  document.getElementById('aw-ti').textContent=title;
+  // Rand KML
   const r0=document.createElement('div');r0.className='awr';
-  r0.innerHTML='<span class="awk" style="color:#a8d5a8">KML</span><span class="awv" style="color:#a8d5a8">'+ex(kmlName)+'</span>';
+  r0.innerHTML='<span class="awk" style="color:#a8d5a8">KML sursa</span>'
+    +'<span class="awv" style="color:#a8d5a8">'+ex(kmlName||'—')+'</span>';
   b.appendChild(r0);
-  Object.keys(curF).forEach(k=>{
-    if(k.startsWith('_'))return;
-    const r=document.createElement('div');r.className='awr';
-    r.innerHTML='<span class="awk">'+ex(k==='__nm__'?'Name':k)+'</span><span class="awv">'+ex(curF[k])+'</span>';
-    b.appendChild(r);
-  });
+  // Toate campurile parcela
+  const keys=Object.keys(curF).filter(k=>!k.startsWith('_'));
+  if(keys.length===0){
+    const empty=document.createElement('div');
+    empty.style.cssText='padding:20px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:11px';
+    empty.textContent='Nu exista atribute in acest poligon.';
+    b.appendChild(empty);
+  } else {
+    keys.forEach(k=>{
+      const val=curF[k];
+      const valStr=(val===null||val===undefined)?'—':String(val);
+      const r=document.createElement('div');r.className='awr';
+      r.innerHTML='<span class="awk">'+ex(k==='__nm__'?'Name':k)+'</span>'
+        +'<span class="awv">'+ex(valStr)+'</span>';
+      b.appendChild(r);
+    });
+  }
+  // Deschide fereastra
   document.getElementById('aw-ov').classList.add('on');
   document.getElementById('aw-box').classList.add('on');
 }
@@ -1164,10 +1181,11 @@ function saveP(){
   document.getElementById('prevo').classList.remove('show');
 
   // METODA 1: JavascriptInterface nativ Android (APK)
-  // AndroidPhotoSaver e injectat de MainActivity.java
-  if(window.AndroidPhotoSaver){
+  // AndroidApp e injectat de MainActivity.java via addJavascriptInterface
+  const bridge = window.AndroidApp || window.AndroidPhotoSaver;
+  if(bridge && bridge.savePhoto){
     try{
-      const result = window.AndroidPhotoSaver.savePhoto(lastB64, lastFname);
+      const result = bridge.savePhoto(lastB64, lastFname);
       hideProg();
       if(result && result.startsWith('OK')){
         toast('✓ Salvat in DCIM/ROPhotoKml','ok');
@@ -1176,7 +1194,7 @@ function saveP(){
       }
       return;
     }catch(e){
-      console.warn('AndroidPhotoSaver err:',e);
+      console.warn('Bridge save err:',e);
     }
   }
 
