@@ -103,10 +103,10 @@ html,body{height:100%;overflow:hidden;background:#0d1a0d;color:var(--txt);font-f
 /* ═══════════════════════════════════
    ATTR WINDOW
    ═══════════════════════════════════ */
-#aw-ov{display:none;position:fixed;inset:0;z-index:2100;background:rgba(0,0,0,.7)}
+#aw-ov{display:none;position:fixed;inset:0;z-index:3499;background:rgba(0,0,0,.7)}
 #aw-ov.on{display:block}
 #aw-box{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
-  z-index:2101;width:92%;max-width:370px;max-height:80vh;
+  z-index:3500;width:92%;max-width:370px;max-height:80vh;
   background:#061206;border:1px solid var(--bord);border-radius:14px;
   overflow:hidden;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.9)}
 #aw-box.on{display:flex}
@@ -848,6 +848,7 @@ function doFinalize(){
 
 function openAW(){
   if(!curF){toast('Selecteaza o parcela mai intai','wn');return;}
+  closePP();
   const b=document.getElementById('aw-bd');
   if(!b){toast('Eroare UI atribute','er');return;}
   b.innerHTML='';
