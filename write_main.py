@@ -1,6 +1,151 @@
 import os
+
 ma = "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
 os.makedirs(os.path.dirname(ma), exist_ok=True)
-content = 'package ro.rophotokml.app;\nimport android.os.Bundle;\nimport android.os.Build;\nimport android.webkit.JavascriptInterface;\nimport android.webkit.WebView;\nimport android.content.ContentValues;\nimport android.content.ContentResolver;\nimport android.net.Uri;\nimport android.provider.MediaStore;\nimport android.util.Base64;\nimport java.io.OutputStream;\nimport java.io.File;\nimport java.io.FileOutputStream;\nimport com.getcapacitor.BridgeActivity;\npublic class MainActivity extends BridgeActivity {\n    @Override\n    public void onCreate(Bundle savedInstanceState) {\n        super.onCreate(savedInstanceState);\n        getBridge().getWebView().addJavascriptInterface(new NativeBridge(), "AndroidApp");\n    }\n    @Override\n    public void onBackPressed() {\n        WebView webView = getBridge().getWebView();\n        webView.evaluateJavascript(\n            "(function(){ if(typeof window.onAndroidBack===\'function\'){ window.onAndroidBack(); return \'handled\'; } return \'unhandled\'; })()",\n            value -> {\n                if (value == null || !value.contains("handled")) {\n                    runOnUiThread(() -> MainActivity.super.onBackPressed());\n                }\n            }\n        );\n    }\n    public class NativeBridge {\n        @JavascriptInterface\n        public String savePhoto(String base64Data, String filename) {\n            try {\n                byte[] imageBytes = Base64.decode(base64Data, Base64.DEFAULT);\n                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {\n                    ContentResolver resolver = getContentResolver();\n                    ContentValues values = new ContentValues();\n                    values.put(MediaStore.Images.Media.DISPLAY_NAME, filename);\n                    values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");\n                    values.put(MediaStore.Images.Media.RELATIVE_PATH, "DCIM/ROPhotoKml");\n                    values.put(MediaStore.Images.Media.IS_PENDING, 1);\n                    Uri uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);\n                    if (uri == null) return "ERROR:insert failed";\n                    try (OutputStream out = resolver.openOutputStream(uri)) { out.write(imageBytes); }\n                    values.clear();\n                    values.put(MediaStore.Images.Media.IS_PENDING, 0);\n                    resolver.update(uri, values, null, null);\n                    return "OK:" + uri.toString();\n                } else {\n                    File dir = new File(android.os.Environment.getExternalStorageDirectory(), "DCIM/ROPhotoKml");\n                    if (!dir.exists()) dir.mkdirs();\n                    File file = new File(dir, filename);\n                    FileOutputStream fos = new FileOutputStream(file);\n                    fos.write(imageBytes); fos.close();\n                    sendBroadcast(new android.content.Intent(android.content.Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(file)));\n                    return "OK:" + file.getAbsolutePath();\n                }\n            } catch (Exception e) { return "ERROR:" + e.getMessage(); }\n        }\n        @JavascriptInterface\n        public void exitApp() { finishAffinity(); }\n    }\n}\n'
-open(ma, "w").write(content)
-print("MainActivity written OK")
+
+content = '''package ro.rophotokml.app;
+import android.content.Intent;
+import android.database.Cursor;
+import android.net.Uri;
+import android.os.Bundle;
+import android.os.Build;
+import android.provider.OpenableColumns;
+import android.webkit.JavascriptInterface;
+import android.webkit.WebView;
+import android.content.ContentValues;
+import android.content.ContentResolver;
+import android.provider.MediaStore;
+import android.util.Base64;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import com.getcapacitor.BridgeActivity;
+
+public class MainActivity extends BridgeActivity {
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        getBridge().getWebView().addJavascriptInterface(new NativeBridge(), "AndroidApp");
+        handleIntent(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        handleIntent(intent);
+    }
+
+    private void handleIntent(Intent intent) {
+        if (intent == null) return;
+        String action = intent.getAction();
+        Uri data = intent.getData();
+        if ((Intent.ACTION_VIEW.equals(action) || Intent.ACTION_SEND.equals(action)) && data != null) {
+            try {
+                String fileName = getFileName(data);
+                String content = readTextFromUri(data);
+                if (content != null && fileName != null) {
+                    final String fn = fileName;
+                    final String ct = content;
+                    getBridge().getWebView().post(() -> {
+                        String js = "if(typeof window.openKMLFromIntent==='function'){" +
+                            "window.openKMLFromIntent(" +
+                            escapeJs(fn) + "," +
+                            escapeJs(ct) + ");}";
+                        getBridge().getWebView().evaluateJavascript(js, null);
+                    });
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private String escapeJs(String s) {
+        return "'" + s.replace("\\\\", "\\\\\\\\").replace("'", "\\\\'")
+            .replace("\\n", "\\\\n").replace("\\r", "") + "'";
+    }
+
+    private String getFileName(Uri uri) {
+        String result = null;
+        if ("content".equals(uri.getScheme())) {
+            try (Cursor cursor = getContentResolver().query(uri, null, null, null, null)) {
+                if (cursor != null && cursor.moveToFirst()) {
+                    int idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                    if (idx >= 0) result = cursor.getString(idx);
+                }
+            }
+        }
+        if (result == null) {
+            result = uri.getLastPathSegment();
+        }
+        return result;
+    }
+
+    private String readTextFromUri(Uri uri) {
+        try {
+            InputStream is = getContentResolver().openInputStream(uri);
+            if (is == null) return null;
+            BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line).append("\\n");
+            }
+            reader.close();
+            return sb.toString();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        WebView wv = getBridge().getWebView();
+        wv.evaluateJavascript(
+            "if(typeof window.onAndroidBack==='function'){window.onAndroidBack();'ok';}else{'no';}",
+            val -> { if(val==null||!val.contains("ok")){runOnUiThread(()->MainActivity.super.onBackPressed());} }
+        );
+    }
+
+    public class NativeBridge {
+        @JavascriptInterface
+        public String savePhoto(String b64, String fn) {
+            try {
+                byte[] b = Base64.decode(b64, Base64.DEFAULT);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    ContentResolver r = getContentResolver();
+                    ContentValues v = new ContentValues();
+                    v.put(MediaStore.Images.Media.DISPLAY_NAME, fn);
+                    v.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
+                    v.put(MediaStore.Images.Media.RELATIVE_PATH, "DCIM/ROPhotoKml");
+                    v.put(MediaStore.Images.Media.IS_PENDING, 1);
+                    Uri u = r.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, v);
+                    if (u == null) return "ERROR:insert failed";
+                    try (OutputStream o = r.openOutputStream(u)) { o.write(b); }
+                    v.clear(); v.put(MediaStore.Images.Media.IS_PENDING, 0);
+                    r.update(u, v, null, null);
+                    return "OK:" + u.toString();
+                } else {
+                    File d = new File(android.os.Environment.getExternalStorageDirectory(), "DCIM/ROPhotoKml");
+                    if (!d.exists()) d.mkdirs();
+                    File f2 = new File(d, fn);
+                    FileOutputStream fs = new FileOutputStream(f2);
+                    fs.write(b); fs.close();
+                    sendBroadcast(new android.content.Intent(android.content.Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(f2)));
+                    return "OK:" + f2.getAbsolutePath();
+                }
+            } catch (Exception e) { return "ERROR:" + e.getMessage(); }
+        }
+
+        @JavascriptInterface
+        public void exitApp() { finishAffinity(); }
+    }
+}
+'''
+
+open(ma, 'w').write(content)
+print("MainActivity written OK:", len(content), "chars")
