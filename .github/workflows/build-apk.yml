@@ -27,41 +27,36 @@ jobs:
         distribution: temurin
     - name: Install Capacitor CLI
       run: npm install -g @capacitor/cli@6
-    - name: Add Android
+    - name: Add Android platform
       run: npx cap add android
     - name: Sync Capacitor
       run: npx cap sync android
-    - name: Write MainActivity
+    - name: Write MainActivity and icons
       run: python3 write_main.py
     - name: Update AndroidManifest
       run: 'M="android/app/src/main/AndroidManifest.xml"
 
-        # Permisiuni
-
-        sed -i ''s|</manifest>|    <uses-permission android:name=\"android.permission.CAMERA\"
-        />\n    <uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\"
-        />\n    <uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\"
-        />\n    <uses-permission android:name=\"android.permission.HIGH_SAMPLING_RATE_SENSORS\"
-        />\n    <uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\"
-        android:maxSdkVersion=\"29\" />\n    <uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\"
-        android:maxSdkVersion=\"32\" />\n    <uses-permission android:name=\"android.permission.READ_MEDIA_IMAGES\"
-        />\n    <uses-feature android:name=\"android.hardware.camera\" android:required=\"false\"
-        />\n    <uses-feature android:name=\"android.hardware.location.gps\" android:required=\"true\"
+        sed -i ''s|</manifest>|    <uses-permission android:name="android.permission.CAMERA"
+        />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"
+        />\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"
+        />\n    <uses-permission android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS"
+        />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="29" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />\n    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"
+        />\n    <uses-feature android:name="android.hardware.camera" android:required="false"
+        />\n    <uses-feature android:name="android.hardware.location.gps" android:required="true"
         />\n</manifest>|'' "$M"
 
-        # Intent filter pentru fisiere .kml
-
-        sed -i ''s|</activity>|        <intent-filter>\n            <action android:name=\"android.intent.action.VIEW\"
-        />\n            <category android:name=\"android.intent.category.DEFAULT\"
-        />\n            <data android:mimeType=\"application/vnd.google-earth.kml+xml\"
+        sed -i ''s|</activity>|        <intent-filter>\n            <action android:name="android.intent.action.VIEW"
+        />\n            <category android:name="android.intent.category.DEFAULT" />\n            <data
+        android:mimeType="application/vnd.google-earth.kml+xml" />\n        </intent-filter>\n        <intent-filter>\n            <action
+        android:name="android.intent.action.VIEW" />\n            <category android:name="android.intent.category.DEFAULT"
+        />\n            <data android:scheme="content" android:host="*" android:pathPattern=".*\\.kml"
         />\n        </intent-filter>\n        <intent-filter>\n            <action
-        android:name=\"android.intent.action.VIEW\" />\n            <category android:name=\"android.intent.category.DEFAULT\"
-        />\n            <data android:scheme=\"file\" android:host=\"*\" android:pathPattern=\".*\\\\.kml\"
-        />\n        </intent-filter>\n        <intent-filter>\n            <action
-        android:name=\"android.intent.action.VIEW\" />\n            <category android:name=\"android.intent.category.DEFAULT\"
-        />\n            <data android:scheme=\"content\" android:host=\"*\" android:pathPattern=\".*\\\\.kml\"
+        android:name="android.intent.action.VIEW" />\n            <category android:name="android.intent.category.DEFAULT"
+        />\n            <data android:scheme="file" android:host="*" android:pathPattern=".*\\.kml"
         />\n        </intent-filter>\n</activity>|'' "$M" '
-    - name: Build APK
+    - name: Build APK debug
       run: 'cd android
 
         chmod +x gradlew
