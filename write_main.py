@@ -1,9 +1,9 @@
-import os, base64, shutil
+import os, shutil, base64
 
 ma = "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
 os.makedirs(os.path.dirname(ma), exist_ok=True)
 
-content = '''package ro.rophotokml.app;
+java_code = '''package ro.rophotokml.app;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -25,49 +25,52 @@ import java.io.FileOutputStream;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
+    private boolean intentHandled = false;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getBridge().getWebView().addJavascriptInterface(new NativeBridge(), "AndroidApp");
-        handleIntent(getIntent());
+        getBridge().getWebView().postDelayed(() -> handleIntent(getIntent()), 2000);
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
-        handleIntent(intent);
+        getBridge().getWebView().postDelayed(() -> handleIntent(intent), 1000);
     }
 
     private void handleIntent(Intent intent) {
         if (intent == null) return;
-        String action = intent.getAction();
         Uri data = intent.getData();
         if (data == null && intent.getClipData() != null) {
             data = intent.getClipData().getItemAt(0).getUri();
         }
-        if ((Intent.ACTION_VIEW.equals(action) || Intent.ACTION_SEND.equals(action)) && data != null) {
-            try {
-                String fileName = getFileName(data);
-                String content = readTextFromUri(data);
-                if (content != null && fileName != null) {
-                    final String fn = fileName;
-                    final String ct = content;
-                    getBridge().getWebView().post(() -> {
-                        String escaped = ct.replace("\\\\", "\\\\\\\\")
-                            .replace("'", "\\\\'")
-                            .replace("\\r", "")
-                            .replace("\\n", "\\\\n");
-                        String fnEsc = fn.replace("'", "\\\\'");
-                        String js = "if(typeof window.openKMLFromIntent==='function'){" +
-                            "window.openKMLFromIntent('" + fnEsc + "','" + escaped + "');}";
-                        getBridge().getWebView().evaluateJavascript(js, null);
-                    });
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        if (data == null) return;
+        String action = intent.getAction();
+        if (!Intent.ACTION_VIEW.equals(action) && !Intent.ACTION_SEND.equals(action)) return;
+
+        try {
+            final String fileName = getFileName(data);
+            final String content = readTextFromUri(data);
+            if (content == null || fileName == null) return;
+
+            getBridge().getWebView().post(() -> {
+                String escaped = content
+                    .replace("\\\\", "\\\\\\\\")
+                    .replace("\'", "\\'")
+                    .replace("\r", "")
+                    .replace("\n", "\\n");
+                String fnEsc = fileName.replace("\'", "\\'");
+                String js = "setTimeout(function(){" +
+                    "if(typeof window.openKMLFromIntent===\'function\'){" +
+                    "window.openKMLFromIntent(\'" + fnEsc + "\',\'" + escaped + "\');" +
+                    "}},500);";
+                getBridge().getWebView().evaluateJavascript(js, null);
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -79,31 +82,34 @@ public class MainActivity extends BridgeActivity {
                     int idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
                     if (idx >= 0) result = cursor.getString(idx);
                 }
-            } catch (Exception e) { e.printStackTrace(); }
+            } catch (Exception ignored) {}
         }
         if (result == null) result = uri.getLastPathSegment();
         return result;
     }
 
     private String readTextFromUri(Uri uri) {
-        try {
-            InputStream is = getContentResolver().openInputStream(uri);
+        try (InputStream is = getContentResolver().openInputStream(uri)) {
             if (is == null) return null;
             BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
             StringBuilder sb = new StringBuilder();
             String line;
-            while ((line = reader.readLine()) != null) sb.append(line).append("\\n");
-            reader.close();
+            while ((line = reader.readLine()) != null) sb.append(line).append("\n");
             return sb.toString();
-        } catch (Exception e) { return null; }
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     @Override
     public void onBackPressed() {
-        WebView wv = getBridge().getWebView();
-        wv.evaluateJavascript(
-            "if(typeof window.onAndroidBack==='function'){window.onAndroidBack();'ok';}else{'no';}",
-            val -> { if(val==null||!val.contains("ok")){runOnUiThread(()->MainActivity.super.onBackPressed());} }
+        getBridge().getWebView().evaluateJavascript(
+            "if(typeof window.onAndroidBack===\'function\'){window.onAndroidBack();\'ok\';}else{\'no\';}",
+            val -> {
+                if (val == null || !val.contains("ok")) {
+                    runOnUiThread(() -> MainActivity.super.onBackPressed());
+                }
+            }
         );
     }
 
@@ -111,7 +117,7 @@ public class MainActivity extends BridgeActivity {
         @JavascriptInterface
         public String savePhoto(String b64, String fn) {
             try {
-                byte[] b = Base64.decode(b64, Base64.DEFAULT);
+                byte[] bytes = Base64.decode(b64, Base64.DEFAULT);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     ContentResolver r = getContentResolver();
                     ContentValues v = new ContentValues();
@@ -120,8 +126,8 @@ public class MainActivity extends BridgeActivity {
                     v.put(MediaStore.Images.Media.RELATIVE_PATH, "DCIM/ROPhotoKml");
                     v.put(MediaStore.Images.Media.IS_PENDING, 1);
                     Uri u = r.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, v);
-                    if (u == null) return "ERROR:insert failed";
-                    try (OutputStream o = r.openOutputStream(u)) { o.write(b); }
+                    if (u == null) return "ERROR:insert";
+                    try (OutputStream o = r.openOutputStream(u)) { o.write(bytes); }
                     v.clear();
                     v.put(MediaStore.Images.Media.IS_PENDING, 0);
                     r.update(u, v, null, null);
@@ -129,12 +135,11 @@ public class MainActivity extends BridgeActivity {
                 } else {
                     File d = new File(android.os.Environment.getExternalStorageDirectory(), "DCIM/ROPhotoKml");
                     if (!d.exists()) d.mkdirs();
-                    File f2 = new File(d, fn);
-                    FileOutputStream fs = new FileOutputStream(f2);
-                    fs.write(b); fs.close();
+                    File file = new File(d, fn);
+                    try (FileOutputStream fos = new FileOutputStream(file)) { fos.write(bytes); }
                     sendBroadcast(new android.content.Intent(
-                        android.content.Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(f2)));
-                    return "OK:" + f2.getAbsolutePath();
+                        android.content.Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(file)));
+                    return "OK:" + file.getAbsolutePath();
                 }
             } catch (Exception e) { return "ERROR:" + e.getMessage(); }
         }
@@ -145,28 +150,26 @@ public class MainActivity extends BridgeActivity {
 }
 '''
 
-open(ma, 'w').write(content)
-print("MainActivity.java written:", len(content), "chars")
+open(ma, 'w').write(java_code)
+print("MainActivity.java written")
 
-# Copiaza iconitele in folderele Android corecte
+# Copiaza iconitele in folderele Android
 icon_map = [
     ('icon-48.png',  'android/app/src/main/res/mipmap-mdpi/ic_launcher.png'),
     ('icon-72.png',  'android/app/src/main/res/mipmap-hdpi/ic_launcher.png'),
     ('icon-96.png',  'android/app/src/main/res/mipmap-xhdpi/ic_launcher.png'),
     ('icon-144.png', 'android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png'),
     ('icon-192.png', 'android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png'),
-    # Round icons
     ('icon-48.png',  'android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png'),
     ('icon-72.png',  'android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png'),
     ('icon-96.png',  'android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png'),
     ('icon-144.png', 'android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png'),
     ('icon-192.png', 'android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png'),
 ]
-
-for src_name, dst_path in icon_map:
-    if os.path.exists(src_name):
-        os.makedirs(os.path.dirname(dst_path), exist_ok=True)
-        shutil.copy(src_name, dst_path)
-        print(f"Icon: {src_name} -> {dst_path}")
+for src_icon, dst in icon_map:
+    if os.path.exists(src_icon):
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        shutil.copy(src_icon, dst)
+        print(f"  Icon: {src_icon} -> {dst}")
     else:
-        print(f"WARNING: {src_name} not found")
+        print(f"  SKIP (not found): {src_icon}")
