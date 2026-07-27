@@ -31,37 +31,42 @@ jobs:
       run: npx cap add android
     - name: Sync Capacitor
       run: npx cap sync android
-    - name: Write MainActivity and icons
-      run: python3 write_main.py
+    - name: Copy MainActivity
+      run: cp MainActivity.java android/app/src/main/java/ro/rophotokml/app/MainActivity.java
+        && echo "MainActivity copied OK"
+    - name: Copy icons
+      run: "python3 -c \"\nimport os, shutil\nicons = [\n  ('icon-48.png',  'android/app/src/main/res/mipmap-mdpi'),\n\
+        \  ('icon-72.png',  'android/app/src/main/res/mipmap-hdpi'),\n  ('icon-96.png',\
+        \  'android/app/src/main/res/mipmap-xhdpi'),\n  ('icon-144.png', 'android/app/src/main/res/mipmap-xxhdpi'),\n\
+        \  ('icon-192.png', 'android/app/src/main/res/mipmap-xxxhdpi'),\n]\nfor src,\
+        \ dst in icons:\n  if os.path.exists(src):\n    os.makedirs(dst, exist_ok=True)\n\
+        \    shutil.copy(src, os.path.join(dst, 'ic_launcher.png'))\n    shutil.copy(src,\
+        \ os.path.join(dst, 'ic_launcher_round.png'))\n    print('Icon:', src, '->',\
+        \ dst)\n\" "
     - name: Update AndroidManifest
       run: 'M="android/app/src/main/AndroidManifest.xml"
 
-        sed -i ''s|</manifest>|    <uses-permission android:name="android.permission.CAMERA"
-        />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"
-        />\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"
-        />\n    <uses-permission android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS"
-        />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="29" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="32" />\n    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"
-        />\n    <uses-feature android:name="android.hardware.camera" android:required="false"
-        />\n    <uses-feature android:name="android.hardware.location.gps" android:required="true"
+        sed -i ''s|</manifest>|    <uses-permission android:name=\"android.permission.CAMERA\"
+        />\n    <uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\"
+        />\n    <uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\"
+        />\n    <uses-permission android:name=\"android.permission.HIGH_SAMPLING_RATE_SENSORS\"
+        />\n    <uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\"
+        android:maxSdkVersion=\"29\" />\n    <uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\"
+        android:maxSdkVersion=\"32\" />\n    <uses-permission android:name=\"android.permission.READ_MEDIA_IMAGES\"
+        />\n    <uses-feature android:name=\"android.hardware.camera\" android:required=\"false\"
+        />\n    <uses-feature android:name=\"android.hardware.location.gps\" android:required=\"true\"
         />\n</manifest>|'' "$M"
 
-        sed -i ''s|</activity>|        <intent-filter>\n            <action android:name="android.intent.action.VIEW"
-        />\n            <category android:name="android.intent.category.DEFAULT" />\n            <data
-        android:mimeType="application/vnd.google-earth.kml+xml" />\n        </intent-filter>\n        <intent-filter>\n            <action
-        android:name="android.intent.action.VIEW" />\n            <category android:name="android.intent.category.DEFAULT"
-        />\n            <data android:scheme="content" android:host="*" android:pathPattern=".*\\.kml"
+        sed -i ''s|</activity>|        <intent-filter>\n            <action android:name=\"android.intent.action.VIEW\"
+        />\n            <category android:name=\"android.intent.category.DEFAULT\"
+        />\n            <data android:mimeType=\"application/vnd.google-earth.kml+xml\"
         />\n        </intent-filter>\n        <intent-filter>\n            <action
-        android:name="android.intent.action.VIEW" />\n            <category android:name="android.intent.category.DEFAULT"
-        />\n            <data android:scheme="file" android:host="*" android:pathPattern=".*\\.kml"
+        android:name=\"android.intent.action.VIEW\" />\n            <category android:name=\"android.intent.category.DEFAULT\"
+        />\n            <data android:scheme=\"content\" android:host=\"*\" android:pathPattern=\".*\\\\.kml\"
         />\n        </intent-filter>\n</activity>|'' "$M" '
-    - name: Build APK debug
-      run: 'cd android
-
-        chmod +x gradlew
-
-        ./gradlew assembleDebug --no-daemon'
+    - name: Build APK
+      run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon --stacktrace
+        2>&1 | tail -50
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
