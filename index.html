@@ -246,17 +246,6 @@ canvas{display:none}
 #rem-box button{padding:8px 20px;border-radius:8px;border:1px solid var(--g);background:rgba(34,197,94,.15);color:var(--g);font-size:13px;cursor:pointer;font-family:var(--mono)}
 
 /* EXPORT */
-#exp-ov{display:none;position:fixed;inset:0;z-index:620;background:rgba(0,0,0,.6)}
-#exp-ov.on{display:block}
-#exp-box{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
-  z-index:621;background:#061206;border:1px solid var(--bord);border-radius:14px;
-  padding:20px;width:88%;max-width:310px}
-#exp-box.on{display:block}
-#exp-box h3{font-family:var(--mono);color:var(--g);font-size:13px;margin-bottom:12px}
-.exp-b{display:block;width:100%;padding:10px;margin-bottom:8px;border-radius:8px;border:1px solid var(--bord);background:rgba(34,197,94,.07);color:var(--txt);font-size:13px;cursor:pointer;font-family:var(--mono);text-align:left}
-.exp-b:active{background:rgba(34,197,94,.18)}
-.exp-cl{background:none;border:1px solid rgba(255,255,255,.2);color:var(--muted);padding:8px;width:100%;border-radius:8px;cursor:pointer;font-family:var(--mono);font-size:12px}
-
 /* SPLASH */
 #splash{position:fixed;inset:0;z-index:5000;background:#0d1a0d;display:flex;flex-direction:column;align-items:center;justify-content:center}
 #spl-lens{position:relative;width:120px;height:120px;margin:0 auto 20px;display:flex;align-items:center;justify-content:center}
@@ -303,7 +292,7 @@ canvas{display:none}
   <button class="sb" id="bcomp" onclick="startCompass()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="12,2 14,9 12,12 10,9"/><polygon points="12,22 14,15 12,12 10,15" opacity=".3"/></svg><span class="sl">Busola</span></button>
   <button class="sb" id="bcam" onclick="toggleCam()"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg><span class="sl">Camera</span></button>
   <button class="sb wb on" id="bbuf" onclick="toggleBuf()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span class="sl">Buffer</span></button>
-  <button class="sb" onclick="openExport()"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span class="sl">Export</span></button>
+
   <div class="sp"></div>
   <button class="sb" onclick="centerMap()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v5M12 18v5M1 12h5M18 12h5"/></svg><span class="sl">Centru</span></button>
   <button class="sb" id="blyr" onclick="toggleLayer()"><svg viewBox="0 0 24 24"><polygon points="12,2 22,8.5 12,15 2,8.5"/><polyline points="2,15.5 12,22 22,15.5" opacity=".4"/></svg><span class="sl">Strat</span></button>
@@ -406,16 +395,6 @@ canvas{display:none}
   <button onclick="document.getElementById('rem-box').classList.remove('on')">OK</button>
 </div>
 
-<!-- EXPORT -->
-<div id="exp-ov" onclick="closeExport()"></div>
-<div id="exp-box">
-  <h3>Export poligoane</h3>
-  <button class="exp-b" onclick="doExport('kml')">📄 KML</button>
-  <button class="exp-b" onclick="doExport('geojson')">🗺 GeoJSON</button>
-  <button class="exp-b" onclick="doExport('gpx')">📍 GPX</button>
-  <button class="exp-cl" onclick="closeExport()">Inchide</button>
-</div>
-
 <!-- CAMERA -->
 <div id="camo">
   <div id="vwr">
@@ -509,7 +488,6 @@ function handleBack(){
     ['galo','closeGallery'],
     ['aw-box','closeAW'],
     ['pp-box','closePP'],
-    ['exp-box','closeExport'],
     ['km-box','closeKM'],
   ];
   for(const [id,fn] of layers){
@@ -679,6 +657,157 @@ function parseKMLEntry(k){
   if(k.feats)return;
   const doc=new DOMParser().parseFromString(k.xml,'text/xml');
   const parsed=[],fs=new Set();
+
+  // Stiluri
+  const styles={},smap={};
+  Array.from(doc.getElementsByTagName('Style')).forEach(s=>{
+    const id=s.getAttribute('id');if(!id)return;
+    const psa=s.getElementsByTagName('PolyStyle'),lsa=s.getElementsByTagName('LineStyle');
+    let fc='#22c55e',sc='#22c55e',fo=0.12;
+    if(psa.length>0){const ca=psa[0].getElementsByTagName('color');if(ca.length>0){const abgr=ca[0].textContent.trim();if(abgr.length===8){const a=parseInt(abgr.slice(0,2),16)/255,b=abgr.slice(2,4),g=abgr.slice(4,6),rv=abgr.slice(6,8);fc='#'+rv+g+b;fo=Math.min(.6,Math.max(.05,a*.6));}}}
+    if(lsa.length>0){const ca=lsa[0].getElementsByTagName('color');if(ca.length>0){const abgr=ca[0].textContent.trim();if(abgr.length===8){const b=abgr.slice(2,4),g=abgr.slice(4,6),rv=abgr.slice(6,8);sc='#'+rv+g+b;}}}
+    styles['#'+id]={fc,sc,fo};
+  });
+  Array.from(doc.getElementsByTagName('StyleMap')).forEach(sm=>{
+    const id=sm.getAttribute('id');if(!id)return;
+    Array.from(sm.getElementsByTagName('Pair')).forEach(p=>{
+      const keys=p.getElementsByTagName('key'),urls=p.getElementsByTagName('styleUrl');
+      if(keys.length>0&&keys[0].textContent.trim()==='normal'&&urls.length>0)
+        smap['#'+id]=urls[0].textContent.trim();
+    });
+  });
+
+  Array.from(doc.getElementsByTagName('Placemark')).forEach(pm=>{
+    const f={_c:[],_ctr:null,_done:false,_sty:null};
+
+    // ── NUMELE parcelei: incearca <name>, apoi <n> ──
+    const nameEls=pm.getElementsByTagName('name');
+    const nEls=pm.getElementsByTagName('n');
+    let nm='';
+    if(nameEls.length>0 && nameEls[0].parentNode===pm){
+      nm=nameEls[0].textContent.trim();
+    } else if(nEls.length>0 && nEls[0].parentNode===pm){
+      nm=nEls[0].textContent.trim();
+    }
+    if(nm){f['__nm__']=nm;fs.add('__nm__');}
+
+    // ── ATRIBUTE din SimpleData ──
+    Array.from(pm.getElementsByTagName('SimpleData')).forEach(sd=>{
+      const n=sd.getAttribute('name');
+      if(n){f[n]=sd.textContent.trim();fs.add(n);}
+    });
+
+    // ── ATRIBUTE din Data/value ──
+    Array.from(pm.getElementsByTagName('Data')).forEach(d=>{
+      const n=d.getAttribute('name');
+      const vs=d.getElementsByTagName('value');
+      if(n&&vs.length>0){f[n]=vs[0].textContent.trim();fs.add(n);}
+    });
+
+    // ── ATRIBUTE din <description> HTML encodat ──
+    // Format: <b>cheie</b>: valoare<br>
+    const descEls=pm.getElementsByTagName('description');
+    if(descEls.length>0){
+      const descHtml=descEls[0].textContent||descEls[0].innerHTML||'';
+      if(descHtml.trim()){
+        // Decodifica HTML entities si parseaza
+        const tmp=document.createElement('div');
+        tmp.innerHTML=descHtml;
+        const text=tmp.innerHTML;
+        // Extrage perechi cheie:valoare din HTML
+        const parts=text.split(/<br\s*\/?>/gi);
+        parts.forEach(part=>{
+          // Sterge tag-urile HTML ramase
+          const clean=part.replace(/<[^>]+>/g,'').trim();
+          if(!clean)return;
+          const colonIdx=clean.indexOf(':');
+          if(colonIdx>0){
+            const key=clean.slice(0,colonIdx).trim().replace(/\s+/g,'_');
+            const val=clean.slice(colonIdx+1).trim();
+            if(key&&!f[key]){f[key]=val;fs.add(key);}
+          }
+        });
+        // Salveaza si descrierea bruta
+        f['_desc_raw']=descHtml;
+      }
+    }
+
+    // ── STIL ──
+    const sus=pm.getElementsByTagName('styleUrl');
+    if(sus.length>0){
+      let sid=sus[0].textContent.trim();
+      if(smap[sid])sid=smap[sid];
+      if(styles[sid])f._sty=styles[sid];
+    }
+
+    // ── COORDONATE (suporta si innerBoundaryIs - le ignora, doar outer) ──
+    const outerEls=pm.getElementsByTagName('outerBoundaryIs');
+    const coordEls=outerEls.length>0
+      ? outerEls[0].getElementsByTagName('coordinates')
+      : pm.getElementsByTagName('coordinates');
+    const cs=[];
+    if(coordEls.length>0){
+      coordEls[0].textContent.trim().split(/\s+/).forEach(t=>{
+        const p=t.split(',');
+        if(p.length>=2){
+          const lo=parseFloat(p[0]),la=parseFloat(p[1]);
+          if(!isNaN(lo)&&!isNaN(la))cs.push([la,lo]);
+        }
+      });
+    }
+    f._c=cs;
+    if(cs.length){
+      const las=cs.map(c=>c[0]),los=cs.map(c=>c[1]);
+      f._ctr=[(Math.min(...las)+Math.max(...las))/2,(Math.min(...los)+Math.max(...los))/2];
+    }
+    if(k.doneIds&&k.doneIds.includes(fid(f)))f._done=true;
+    if(f._c.length>=3)parsed.push(f);
+  });
+  k.feats=parsed;k.allF=Array.from(fs).filter(k=>!k.startsWith('_'));
+}
+
+function activateKML(id){
+  const k=kmlStore.find(x=>x.id===id);if(!k)return;
+  activeKmlId=id;feats=k.feats||[];kmlName=k.name;allF=k.allF||[];
+  selField1='';selField2='';buildFS();
+  if(k.vis!==false)drawKML(k);
+  fitAll();
+  // Show remain popup
+  const total=feats.length,done=feats.filter(f=>f._done).length,rem=total-done;
+  document.getElementById('rem-ic').textContent=rem===0?'✅':'📋';
+  document.getElementById('rem-tx').textContent=rem===0?'Toate '+total+' parcele finalizate!':'Mai aveti '+rem+' parcele de finalizat din '+total;
+  document.getElementById('rem-box').classList.add('on');
+  setTimeout(()=>document.getElementById('rem-box').classList.remove('on'),4000);
+  closeKM();saveState();
+}
+
+function toggleKMLVis(id){
+  const k=kmlStore.find(x=>x.id===id);if(!k)return;
+  k.vis=!(k.vis!==false);
+  polyL.forEach(pl=>{
+    if(pl._kid===id){
+      if(k.vis){if(!map.hasLayer(pl.ly))pl.ly.addTo(map);if(pl.mk&&!map.hasLayer(pl.mk))pl.mk.addTo(map);}
+      else{map.removeLayer(pl.ly);if(pl.mk)map.removeLayer(pl.mk);}
+    }
+  });
+  saveState();renderKMList();
+}
+
+function deleteKML(id){
+  if(!confirm('Stergi KML-ul?'))return;
+  polyL=polyL.filter(pl=>{
+    if(pl._kid===id){map.removeLayer(pl.ly);if(pl.mk)map.removeLayer(pl.mk);return false;}
+    return true;
+  });
+  kmlStore=kmlStore.filter(x=>x.id!==id);
+  if(activeKmlId===id){activeKmlId=null;feats=[];kmlName='';allF=[];buildFS();}
+  saveState();renderKMList();toast('KML sters','wn');
+}
+
+function parseKMLEntry(k){
+  if(k.feats)return;
+  const doc=new DOMParser().parseFromString(k.xml,'text/xml');
+  const parsed=[],fs=new Set();
   // Parse styles
   const styles={};
   Array.from(doc.getElementsByTagName('Style')).forEach(s=>{
@@ -702,30 +831,63 @@ function parseKMLEntry(k){
   const pms=doc.getElementsByTagName('Placemark');
   Array.from(pms).forEach(pm=>{
     const f={_c:[],_ctr:null,_done:false,_sty:null};
-    // SimpleData (in SchemaData/ExtendedData)
+
+    // 1. SimpleData (ExtendedData/SchemaData)
     Array.from(pm.getElementsByTagName('SimpleData')).forEach(sd=>{
       const n=sd.getAttribute('name');
       if(n){f[n]=sd.textContent.trim();fs.add(n);}
     });
-    // Data (format alternativ)
+    // 2. Data (format alternativ ExtendedData)
     Array.from(pm.getElementsByTagName('Data')).forEach(d=>{
       const n=d.getAttribute('name');
       const vs=d.getElementsByTagName('value');
       if(n&&vs.length>0){f[n]=vs[0].textContent.trim();fs.add(n);}
     });
-    // Name element
+    // 3. Description HTML — format: <b>key</b>: value<br>
+    const descs=pm.getElementsByTagName('description');
+    if(descs.length>0){
+      const raw=descs[0].textContent||descs[0].innerHTML||'';
+      // Decode HTML entities si parseaza perechi key: value
+      const div=document.createElement('div');
+      div.innerHTML=raw;
+      const html=div.innerHTML;
+      // Extrage perechi <b>key</b>: value<br>
+      const re=/<b>([^<]+)<\/b>\s*:\s*([^<]*)/gi;
+      let m;
+      while((m=re.exec(html))!==null){
+        const key=m[1].trim();
+        const val=m[2].trim();
+        if(key&&!f[key]){f[key]=val;fs.add(key);}
+      }
+      // Alternativ: text simplu "key: value" pe randuri
+      if(Object.keys(f).filter(k=>!k.startsWith('_')).length===0){
+        div.querySelectorAll&&div.querySelectorAll('b').forEach(b=>{
+          const key=b.textContent.trim();
+          let val='';
+          let next=b.nextSibling;
+          while(next&&next.nodeName!=='B'&&next.nodeName!=='BR'){
+            if(next.textContent)val+=next.textContent;
+            next=next.nextSibling;
+          }
+          val=val.replace(/^\s*:\s*/,'').trim();
+          if(key&&val&&!f[key]){f[key]=val;fs.add(key);}
+        });
+      }
+    }
+
+    // 4. Name element
     const names=pm.getElementsByTagName('name');
     if(names.length>0&&names[0].parentNode===pm){
       f['__nm__']=names[0].textContent.trim();fs.add('__nm__');
     }
-    // StyleUrl
+    // 5. StyleUrl
     const sus=pm.getElementsByTagName('styleUrl');
     if(sus.length>0){
       let sid=sus[0].textContent.trim();
       if(smap[sid])sid=smap[sid];
       if(styles[sid])f._sty=styles[sid];
     }
-    // Coordinates
+    // 6. Coordinates
     const cs=[];
     Array.from(pm.getElementsByTagName('coordinates')).forEach(c=>{
       c.textContent.trim().split(/\s+/).forEach(t=>{
@@ -892,39 +1054,37 @@ function doFinalize(){
 }
 
 function openAW(){
-  if(!curF){toast('Selecteaza o parcela mai intai','wn');return;}
+  if(!curF){toast('Selecteaza o parcela','wn');return;}
   closePP();
   const b=document.getElementById('aw-bd');
-  if(!b){toast('Eroare UI atribute','er');return;}
   b.innerHTML='';
-  const title=lbl(curF)||curF['__nm__']||'Atribute parcela';
-  document.getElementById('aw-ti').textContent=title;
-  // Rand KML
+  // Titlu
+  const titlu=curF['__nm__']||'Parcela';
+  document.getElementById('aw-ti').textContent=titlu;
+  // KML sursa
   const r0=document.createElement('div');r0.className='awr';
-  r0.innerHTML='<span class="awk" style="color:#a8d5a8">KML sursa</span>'
+  r0.innerHTML='<span class="awk" style="color:#a8d5a8">KML</span>'
     +'<span class="awv" style="color:#a8d5a8">'+ex(kmlName||'—')+'</span>';
   b.appendChild(r0);
-  // Toate campurile parcela
+  // Toate campurile (exclude interne _*)
   const keys=Object.keys(curF).filter(k=>!k.startsWith('_'));
   if(keys.length===0){
-    const empty=document.createElement('div');
-    empty.style.cssText='padding:20px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:11px';
-    empty.textContent='Nu exista atribute in acest poligon.';
-    b.appendChild(empty);
+    b.innerHTML+='<div style="padding:20px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:11px">Nu exista atribute.</div>';
   } else {
     keys.forEach(k=>{
       const val=curF[k];
-      const valStr=(val===null||val===undefined)?'—':String(val);
-      const r=document.createElement('div');r.className='awr';
-      r.innerHTML='<span class="awk">'+ex(k==='__nm__'?'Name':k)+'</span>'
+      if(val===null||val===undefined||val==='')return;
+      const valStr=String(val);
+      const row=document.createElement('div');row.className='awr';
+      row.innerHTML='<span class="awk">'+ex(k==='__nm__'?'Nume':k)+'</span>'
         +'<span class="awv">'+ex(valStr)+'</span>';
-      b.appendChild(r);
+      b.appendChild(row);
     });
   }
-  // Deschide fereastra
   document.getElementById('aw-ov').classList.add('on');
   document.getElementById('aw-box').classList.add('on');
 }
+
 function closeAW(){
   document.getElementById('aw-ov').classList.remove('on');
   document.getElementById('aw-box').classList.remove('on');
@@ -1090,215 +1250,102 @@ function d2poly(la,lo,cs){
   return pip(la,lo,cs)?0:d;
 }
 
-// ── EXIF BUILDER ──
-function buildEXIF(dtStr,lat,lon,alt,hdg){
-  function ui16(v){return [v>>8&255,v&255];}
-  function ui32(v){return [v>>24&255,v>>16&255,v>>8&255,v&255];}
-  function rational(n,d){return [...ui32(n),...ui32(d)];}
-  function ascii(s){const b=[];for(let i=0;i<s.length;i++)b.push(s.charCodeAt(i));b.push(0);return b;}
-  function ifd(tag,type,count,valOrOff){
-    return [...ui16(tag),...ui16(type),...ui32(count),...ui32(valOrOff)];
+// ── EXIF BUILDER WGS84 COMPLET ──
+function buildEXIF(dtStr, lat, lon, alt, hdg){
+  // Helper: scrie 2 bytes big-endian
+  function w2(v){return [v>>8&0xFF, v&0xFF];}
+  // Helper: scrie 4 bytes big-endian
+  function w4(v){return [v>>24&0xFF, v>>16&0xFF, v>>8&0xFF, v&0xFF];}
+  // Helper: rational (doua uint32)
+  function rat(n,d){return [...w4(Math.round(n)), ...w4(Math.round(d))];}
+  // Helper: GPS rational din grade decimale
+  function gpsRat(deg){
+    const d=Math.floor(Math.abs(deg));
+    const m=Math.floor((Math.abs(deg)-d)*60);
+    const s=((Math.abs(deg)-d)*60-m)*60;
+    return [...rat(d,1), ...rat(m,1), ...rat(Math.round(s*1000),1000)];
   }
-  const TIFF_HEADER=[0x4D,0x4D,0x00,0x2A,0x00,0x00,0x00,0x08];
-  const GPS_IFD_OFFSET=8+2+12*6+4; // after main IFD
-  // Main IFD - 6 entries
-  const nMain=6;
-  const mainEntries=[
-    ...ifd(0x010E,2,11,0),    // ImageDescription placeholder
-    ...ifd(0x0131,2,8,0),     // Software
-    ...ifd(0x0132,2,20,0),    // DateTime
-    ...ifd(0x013B,2,11,0),    // Artist
-    ...ifd(0x8769,4,1,0),     // ExifIFD placeholder
-    ...ifd(0x8825,4,1,GPS_IFD_OFFSET), // GPS IFD
+  // Helper: IFD entry (12 bytes)
+  function ifdEntry(tag,type,count,valOrOff){
+    return [...w2(tag), ...w2(type), ...w4(count), ...w4(valOrOff)];
+  }
+  // Helper: ASCII string ca bytes
+  function ascii(s){
+    const b=[];for(let i=0;i<s.length;i++)b.push(s.charCodeAt(i)&0xFF);b.push(0);
+    return b;
+  }
+
+  // Layout offset-uri (relative la inceputul TIFF header)
+  // TIFF header: 8 bytes
+  // IFD0: 2 + 6*12 + 4 = 78 bytes  (6 entries + next IFD ptr)
+  // GPS IFD: la offset 86
+  const TIFF_START = 0;
+  const IFD0_START = 8;
+  const IFD0_ENTRIES = 4; // DateTimeOriginal, Make, GPS IFD pointer, ExifIFD
+  const IFD0_SIZE = 2 + IFD0_ENTRIES*12 + 4;
+  const GPS_IFD_OFF = IFD0_START + IFD0_SIZE;
+
+  const GPS_ENTRIES = 6; // Version, LatRef, Lat, LonRef, Lon, AltRef+Alt
+  const GPS_IFD_SIZE = 2 + GPS_ENTRIES*12 + 4;
+  const GPS_DATA_OFF = GPS_IFD_OFF + GPS_IFD_SIZE;
+
+  // Date/time string
+  const dt = dtStr || '2026:01:01 00:00:00';
+  const dtBytes = ascii(dt); // 20 bytes
+
+  const DT_OFF = GPS_DATA_OFF + 24*3; // dupa rationale GPS (lat 24 + lon 24 + alt 8)
+
+  // Calcule GPS
+  const absLat = lat ? Math.abs(lat) : 0;
+  const absLon = lon ? Math.abs(lon) : 0;
+  const absAlt = alt ? Math.abs(alt) : 0;
+  const latRef = (lat&&lat>=0) ? 0x4E000000 : 0x53000000; // 'N' sau 'S'
+  const lonRef = (lon&&lon>=0) ? 0x45000000 : 0x57000000; // 'E' sau 'W'
+  const altRef = (alt&&alt<0) ? 1 : 0; // 0=above sea, 1=below sea
+
+  // GPS rationale
+  const latRat = gpsRat(absLat); // 24 bytes
+  const lonRat = gpsRat(absLon); // 24 bytes
+  const altRat = [...rat(Math.round(absAlt*100), 100)]; // 8 bytes
+
+  // GPS IFD
+  const gpsLatOff  = GPS_DATA_OFF;           // offset lat rational
+  const gpsLonOff  = GPS_DATA_OFF + 24;      // offset lon rational
+  const gpsAltOff  = GPS_DATA_OFF + 48;      // offset alt rational
+
+  let gpsIFD = [...w2(GPS_ENTRIES)];
+  gpsIFD = [...gpsIFD, ...ifdEntry(0x0000, 1, 4, 0x02020000)];           // GPSVersionID
+  gpsIFD = [...gpsIFD, ...ifdEntry(0x0001, 2, 2, latRef)];               // GPSLatitudeRef
+  gpsIFD = [...gpsIFD, ...ifdEntry(0x0002, 5, 3, gpsLatOff)];            // GPSLatitude
+  gpsIFD = [...gpsIFD, ...ifdEntry(0x0003, 2, 2, lonRef)];               // GPSLongitudeRef
+  gpsIFD = [...gpsIFD, ...ifdEntry(0x0004, 5, 3, gpsLonOff)];            // GPSLongitude
+  gpsIFD = [...gpsIFD, ...ifdEntry(0x0006, 5, 1, gpsAltOff)];            // GPSAltitude
+  gpsIFD = [...gpsIFD, ...w4(0)]; // next IFD = 0
+
+  // IFD0
+  const dtOff = GPS_DATA_OFF + 56; // dupa GPS data
+  let ifd0 = [...w2(IFD0_ENTRIES)];
+  ifd0 = [...ifd0, ...ifdEntry(0x0132, 2, 20, dtOff)];                    // DateTime
+  ifd0 = [...ifd0, ...ifdEntry(0x013B, 2, 15, dtOff+20)];                 // Artist
+  ifd0 = [...ifd0, ...ifdEntry(0x8825, 4, 1, GPS_IFD_OFF)];               // GPS IFD pointer
+  ifd0 = [...ifd0, ...ifdEntry(0x9003, 2, 20, dtOff)];                    // DateTimeOriginal
+  ifd0 = [...ifd0, ...w4(0)]; // next IFD = 0
+
+  const artistBytes = ascii('Cristian Farcas'); // 15 bytes
+
+  // Asambleaza TIFF
+  const tiff = [
+    0x4D, 0x4D,          // Big-endian
+    0x00, 0x2A,          // TIFF magic
+    ...w4(IFD0_START),   // IFD0 offset = 8
+    ...ifd0,
+    ...gpsIFD,
+    ...latRat,
+    ...lonRat,
+    ...altRat,
+    ...dtBytes,
+    ...artistBytes,
   ];
-  const dtBytes=ascii(dtStr||'2026:01:01 00:00:00');
-  const nGPS=6;
-  const absLat=lat?Math.abs(lat):0,absLon=lon?Math.abs(lon):0;
-  const latD=Math.floor(absLat),latM=Math.floor((absLat-latD)*60),latS=Math.round(((absLat-latD)*60-latM)*60*100);
-  const lonD=Math.floor(absLon),lonM=Math.floor((absLon-lonD)*60),lonS=Math.round(((absLon-lonD)*60-lonM)*60*100);
-  const gpsData=[
-    ...ifd(0x0000,1,4,0x02020000), // GPSVersionID
-    ...ifd(0x0001,2,2,lat>=0?0x4E000000:0x53000000), // LatRef N/S
-    ...ifd(0x0002,5,3,0),  // Latitude rational - offset filled below
-    ...ifd(0x0003,2,2,lon>=0?0x45000000:0x57000000), // LonRef E/W
-    ...ifd(0x0004,5,3,0),  // Longitude rational - offset filled below
-    ...ifd(0x0005,1,1,alt!=null&&alt>=0?0x00000000:0x01000000), // AltRef
-  ];
-  const latRat=[...rational(latD,1),...rational(latM,1),...rational(latS,100)];
-  const lonRat=[...rational(lonD,1),...rational(lonM,1),...rational(lonS,100)];
-  // Build GPS IFD properly
-  const gpsIFDStart=GPS_IFD_OFFSET;
-  const gpsDataOffset=gpsIFDStart+2+nGPS*12+4;
-  let gpsIFD=[...ui16(nGPS)];
-  gpsIFD=[...gpsIFD,...ifd(0x0000,1,4,0x02020000)];
-  gpsIFD=[...gpsIFD,...ifd(0x0001,2,2,lat!=null&&lat>=0?0x4E000000:0x53000000)];
-  gpsIFD=[...gpsIFD,...ifd(0x0002,5,3,gpsDataOffset)];
-  gpsIFD=[...gpsIFD,...ifd(0x0003,2,2,lon!=null&&lon>=0?0x45000000:0x57000000)];
-  gpsIFD=[...gpsIFD,...ifd(0x0004,5,3,gpsDataOffset+24)];
-  const altVal=alt!=null?Math.round(Math.abs(alt)*100):0;
-  gpsIFD=[...gpsIFD,...ifd(0x0006,5,1,gpsDataOffset+48)];
-  gpsIFD=[...gpsIFD,...ui32(0)]; // next IFD = 0
-  const gpsValues=[...latRat,...lonRat,...rational(altVal,100)];
-  const payload=[...gpsIFD,...gpsValues];
-  // Wrap in APP1
-  const exifHeader=[0x45,0x78,0x69,0x66,0x00,0x00];
-  const tiffAndGPS=[...TIFF_HEADER,...payload];
-  const app1Data=[...exifHeader,...tiffAndGPS];
-  const len=app1Data.length+2;
-  return new Uint8Array([0xFF,0xE1,(len>>8)&0xFF,len&0xFF,...app1Data]);
-}
 
-function doCapture(){
-  const vid=document.getElementById('vid');
-  if(!vid.videoWidth){toast('Camera nu e gata','wn');return;}
-  showProg('Se captureaza...');
-  const w=vid.videoWidth,h=vid.videoHeight;
-  const cnv=document.getElementById('cnv');cnv.width=w;cnv.height=h;
-  const ctx=cnv.getContext('2d');ctx.drawImage(vid,0,0,w,h);
-  const pd=n=>String(n).padStart(2,'0'),now=new Date();
-  const dtExif=now.getFullYear()+':'+pd(now.getMonth()+1)+':'+pd(now.getDate())+' '+pd(now.getHours())+':'+pd(now.getMinutes())+':'+pd(now.getSeconds());
-  const parcelId=(curF&&selField1&&curF[selField1])?curF[selField1]:(curF&&curF['__nm__']?curF['__nm__']:'');
-  const f2val=(selField2&&curF&&curF[selField2]&&curF[selField2]!==parcelId)?curF[selField2]:'';
-  lastFname=parcelId.replace(/[^a-zA-Z0-9_\-]/g,'_').slice(0,60)+'_'+(pCnt+1)+'.jpg';
-  const dtFmt=pd(now.getDate())+'.'+pd(now.getMonth()+1)+'.'+now.getFullYear();
-  const timeFmt=pd(now.getHours())+':'+pd(now.getMinutes());
-  const latStr=lat?lat.toString():'—',lonStr=lon?lon.toString():'—';
-  const accStr=acc?'(±'+Math.round(acc)+'m)':'',altStr=alt!=null?Math.round(alt)+'m':'—';
-  const lines=[parcelId,f2val,kmlName,dtFmt+' '+timeFmt,latStr+', '+lonStr+' '+accStr,'Altitude: '+altStr,cachedUAT||''].filter(l=>l!=='');
-  const fs=Math.max(20,Math.round(h*.025)),pp=Math.round(fs*.6),lh=Math.round(fs*1.55);
-  ctx.font=fs+'px Arial,sans-serif';
-  let mw=0;lines.forEach(l=>{const m=ctx.measureText(l).width;if(m>mw)mw=m;});
-  const bw=mw+pp*2,bh=lines.length*lh+pp*2,bx=pp/2,by=h-bh-pp/2;
-  const finishDraw=()=>{
-    ctx.fillStyle='rgba(0,0,0,0.52)';ctx.fillRect(bx,by,bw,bh);
-    ctx.font=fs+'px Arial,sans-serif';ctx.fillStyle='#fff';
-    lines.forEach((line,i)=>ctx.fillText(line,bx+pp,by+pp+fs+i*lh));
-    // Compass arrow bottom-right
-    if(hdg!=null){
-      const cx=w-Math.round(h*.05)-pp,cy=h-Math.round(h*.05)-pp,r=Math.round(h*.045);
-      const rad=(hdg-90)*Math.PI/180;
-      ctx.save();ctx.fillStyle='rgba(0,0,0,.45)';ctx.beginPath();ctx.arc(cx,cy,r+5,0,Math.PI*2);ctx.fill();
-      ctx.translate(cx,cy);ctx.rotate(rad);
-      ctx.beginPath();ctx.moveTo(0,-r*.85);ctx.lineTo(r*.28,r*.45);ctx.lineTo(0,r*.15);ctx.lineTo(-r*.28,r*.45);ctx.closePath();
-      ctx.fillStyle='#fff';ctx.fill();ctx.restore();
-      ctx.font='bold '+Math.round(r*.65)+'px Arial';ctx.fillStyle='#fff';ctx.textAlign='center';
-      ctx.fillText(cdir(hdg),cx,cy+r+Math.round(r*.85));ctx.textAlign='left';
-    }
-    // Logo bottom-left above text box
-    const li=new Image();
-    li.onload=()=>{
-      const ls=Math.round(h*.13);
-      ctx.save();ctx.beginPath();ctx.arc(pp/2+ls/2,by-ls/2-pp/4,ls/2,0,Math.PI*2);ctx.closePath();ctx.clip();
-      ctx.drawImage(li,pp/2,by-ls-pp/4,ls,ls);ctx.restore();
-      finish();
-    };
-    li.onerror=finish;
-    li.src=APIA_LOGO;
-  };
-  finishDraw();
-  function finish(){
-    try{
-      const dataURL=cnv.toDataURL('image/jpeg',.95),b64=dataURL.split(',')[1];
-      const binStr=atob(b64),orig=new Uint8Array(binStr.length);
-      for(let i=0;i<binStr.length;i++)orig[i]=binStr.charCodeAt(i);
-      let skip=2;
-      while(skip<orig.length-3&&orig[skip]===0xFF){const mt=orig[skip+1];if(mt>=0xE0&&mt<=0xEF){const ml=(orig[skip+2]<<8)|orig[skip+3];skip+=2+ml;}else break;}
-      const app1=buildEXIF(dtExif,lat,lon,alt,hdg);
-      const out=new Uint8Array(2+app1.length+orig.length-skip);
-      out[0]=0xFF;out[1]=0xD8;out.set(app1,2);out.set(orig.slice(skip),2+app1.length);
-      let bin='';const cs=8192;for(let i=0;i<out.length;i+=cs)bin+=String.fromCharCode(...out.slice(i,i+cs));
-      lastB64=btoa(bin);
-    }catch(e){lastB64=cnv.toDataURL('image/jpeg',.95).split(',')[1];}
-    hideProg();document.getElementById('pimg').src='data:image/jpeg;base64,'+lastB64;closeCam();document.getElementById('prevo').classList.add('show');
-  }
-}
-
-
-// ── SAVE ──
-function saveP(){
-  if(!lastB64){toast('Nu exista fotografie','er');return;}
-  showProg('Se salveaza...');
-
-  // Adauga in galeria sesiunii intotdeauna
-  pCnt++;
-  gallery.push({b64:lastB64,name:lastFname});
-  const b=document.getElementById('pbg');
-  b.style.display='block';b.textContent=pCnt+' foto';
-  document.getElementById('prevo').classList.remove('show');
-
-  // METODA 1: JavascriptInterface nativ Android (APK)
-  // AndroidApp e injectat de MainActivity.java via addJavascriptInterface
-  const bridge = window.AndroidApp || window.AndroidPhotoSaver;
-  if(bridge && bridge.savePhoto){
-    try{
-      const result = bridge.savePhoto(lastB64, lastFname);
-      hideProg();
-      if(result && result.startsWith('OK')){
-        toast('✓ Salvat in DCIM/ROPhotoKml','ok');
-      } else {
-        toast('Eroare Android: '+(result||'necunoscuta'),'er');
-      }
-      return;
-    }catch(e){
-      console.warn('Bridge save err:',e);
-    }
-  }
-
-  // METODA 2: download blob (browser web / fallback)
-  hideProg();
-  try{
-    const bin=atob(lastB64);
-    const arr=new Uint8Array(bin.length);
-    for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
-    const blob=new Blob([arr],{type:'image/jpeg'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;a.download=lastFname;a.style.display='none';
-    document.body.appendChild(a);a.click();
-    setTimeout(()=>{try{document.body.removeChild(a);}catch(e){}URL.revokeObjectURL(url);},3000);
-    toast('✓ Descarcat: '+lastFname,'ok');
-  }catch(e){
-    toast('Eroare salvare: '+e.message,'er');
-  }
-}
-function discardP(){document.getElementById('prevo').classList.remove('show');document.getElementById('camo').classList.add('show');}
-
-// ── GALLERY ──
-function openGallery(){
-  const g=document.getElementById('galg');g.innerHTML='';
-  if(!gallery.length){
-    g.innerHTML='<div style="grid-column:1/-1;padding:40px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:11px">Nu exista fotografii in aceasta sesiune.</div>';
-  }else{
-    gallery.forEach((p,i)=>{
-      const d=document.createElement('div');d.className='gt';
-      d.innerHTML='<img src="data:image/jpeg;base64,'+p.b64+'" onclick="openFull('+i+')" loading="lazy">'
-        +'<button class="gd" onclick="delPhoto('+i+')">✕</button>'
-        +'<div class="gname">'+ex(p.name)+'</div>';
-      g.appendChild(d);
-    });
-  }
-  document.getElementById('galo').classList.add('show');
-}
-function closeGallery(){document.getElementById('galo').classList.remove('show');}
-function openFull(i){
-  document.getElementById('fullimg').src='data:image/jpeg;base64,'+gallery[i].b64;
-  document.getElementById('fvname').textContent=gallery[i].name;
-  document.getElementById('fullview').classList.add('show');
-}
-function closeFull(){document.getElementById('fullview').classList.remove('show');}
-function delPhoto(i){
-  if(!confirm('Stergi fotografia "'+gallery[i].name+'"?'))return;
-  gallery.splice(i,1);openGallery();
-}
-
-function openFull(i){document.getElementById('fullimg').src='data:image/jpeg;base64,'+gallery[i].b64;document.getElementById('fvname').textContent=gallery[i].name;document.getElementById('fullview').classList.add('show');history.pushState(null,'',location.href);}
-function closeFull(){document.getElementById('fullview').classList.remove('show');}
-function delPhoto(i){if(!confirm('Stergi?'))return;gallery.splice(i,1);openGallery();}
-function centerMap(){if(lat)map.setView([lat,lon],18);else toast('Activeaza GPS','wn');}
-function showProg(msg){document.getElementById('prog-txt').textContent=msg;document.getElementById('prog').classList.add('show');}
-function hideProg(){document.getElementById('prog').classList.remove('show');}
-function toast(msg,type){const el=document.getElementById('tst');el.textContent=msg;el.className=type;el.style.display='block';clearTimeout(el._t);el._t=setTimeout(()=>el.style.display='none',5000);}
-updSt();
-</script>
-</body>
-</html>
+  // APP1 marker
+  const exifHeader = [0x45,0x78,0x69,0x66,0x00,0x00]; // "Exif
