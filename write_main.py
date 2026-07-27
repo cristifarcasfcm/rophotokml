@@ -1,4 +1,4 @@
-import os
+import os, base64, shutil
 
 ma = "android/app/src/main/java/ro/rophotokml/app/MainActivity.java"
 os.makedirs(os.path.dirname(ma), exist_ok=True)
@@ -36,6 +36,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
+        setIntent(intent);
         handleIntent(intent);
     }
 
@@ -43,6 +44,9 @@ public class MainActivity extends BridgeActivity {
         if (intent == null) return;
         String action = intent.getAction();
         Uri data = intent.getData();
+        if (data == null && intent.getClipData() != null) {
+            data = intent.getClipData().getItemAt(0).getUri();
+        }
         if ((Intent.ACTION_VIEW.equals(action) || Intent.ACTION_SEND.equals(action)) && data != null) {
             try {
                 String fileName = getFileName(data);
@@ -51,10 +55,13 @@ public class MainActivity extends BridgeActivity {
                     final String fn = fileName;
                     final String ct = content;
                     getBridge().getWebView().post(() -> {
+                        String escaped = ct.replace("\\\\", "\\\\\\\\")
+                            .replace("'", "\\\\'")
+                            .replace("\\r", "")
+                            .replace("\\n", "\\\\n");
+                        String fnEsc = fn.replace("'", "\\\\'");
                         String js = "if(typeof window.openKMLFromIntent==='function'){" +
-                            "window.openKMLFromIntent(" +
-                            escapeJs(fn) + "," +
-                            escapeJs(ct) + ");}";
+                            "window.openKMLFromIntent('" + fnEsc + "','" + escaped + "');}";
                         getBridge().getWebView().evaluateJavascript(js, null);
                     });
                 }
@@ -62,11 +69,6 @@ public class MainActivity extends BridgeActivity {
                 e.printStackTrace();
             }
         }
-    }
-
-    private String escapeJs(String s) {
-        return "'" + s.replace("\\\\", "\\\\\\\\").replace("'", "\\\\'")
-            .replace("\\n", "\\\\n").replace("\\r", "") + "'";
     }
 
     private String getFileName(Uri uri) {
@@ -77,11 +79,9 @@ public class MainActivity extends BridgeActivity {
                     int idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
                     if (idx >= 0) result = cursor.getString(idx);
                 }
-            }
+            } catch (Exception e) { e.printStackTrace(); }
         }
-        if (result == null) {
-            result = uri.getLastPathSegment();
-        }
+        if (result == null) result = uri.getLastPathSegment();
         return result;
     }
 
@@ -92,14 +92,10 @@ public class MainActivity extends BridgeActivity {
             BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
             StringBuilder sb = new StringBuilder();
             String line;
-            while ((line = reader.readLine()) != null) {
-                sb.append(line).append("\\n");
-            }
+            while ((line = reader.readLine()) != null) sb.append(line).append("\\n");
             reader.close();
             return sb.toString();
-        } catch (Exception e) {
-            return null;
-        }
+        } catch (Exception e) { return null; }
     }
 
     @Override
@@ -126,7 +122,8 @@ public class MainActivity extends BridgeActivity {
                     Uri u = r.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, v);
                     if (u == null) return "ERROR:insert failed";
                     try (OutputStream o = r.openOutputStream(u)) { o.write(b); }
-                    v.clear(); v.put(MediaStore.Images.Media.IS_PENDING, 0);
+                    v.clear();
+                    v.put(MediaStore.Images.Media.IS_PENDING, 0);
                     r.update(u, v, null, null);
                     return "OK:" + u.toString();
                 } else {
@@ -135,7 +132,8 @@ public class MainActivity extends BridgeActivity {
                     File f2 = new File(d, fn);
                     FileOutputStream fs = new FileOutputStream(f2);
                     fs.write(b); fs.close();
-                    sendBroadcast(new android.content.Intent(android.content.Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(f2)));
+                    sendBroadcast(new android.content.Intent(
+                        android.content.Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(f2)));
                     return "OK:" + f2.getAbsolutePath();
                 }
             } catch (Exception e) { return "ERROR:" + e.getMessage(); }
@@ -148,4 +146,27 @@ public class MainActivity extends BridgeActivity {
 '''
 
 open(ma, 'w').write(content)
-print("MainActivity written OK:", len(content), "chars")
+print("MainActivity.java written:", len(content), "chars")
+
+# Copiaza iconitele in folderele Android corecte
+icon_map = [
+    ('icon-48.png',  'android/app/src/main/res/mipmap-mdpi/ic_launcher.png'),
+    ('icon-72.png',  'android/app/src/main/res/mipmap-hdpi/ic_launcher.png'),
+    ('icon-96.png',  'android/app/src/main/res/mipmap-xhdpi/ic_launcher.png'),
+    ('icon-144.png', 'android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png'),
+    ('icon-192.png', 'android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png'),
+    # Round icons
+    ('icon-48.png',  'android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png'),
+    ('icon-72.png',  'android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png'),
+    ('icon-96.png',  'android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png'),
+    ('icon-144.png', 'android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png'),
+    ('icon-192.png', 'android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png'),
+]
+
+for src_name, dst_path in icon_map:
+    if os.path.exists(src_name):
+        os.makedirs(os.path.dirname(dst_path), exist_ok=True)
+        shutil.copy(src_name, dst_path)
+        print(f"Icon: {src_name} -> {dst_path}")
+    else:
+        print(f"WARNING: {src_name} not found")
