@@ -1,7 +1,7 @@
 {
   "name": "rophotokml",
   "version": "1.0.0",
-  "description": "ROPhotoKml - Inspectie teren GPS cu KML",
+  "description": "ROPhotoKml - creat Cristian Farcas (GPS, KML, Geotag Foto, EXIF)",
   "scripts": {
     "build": "echo ok"
   },
