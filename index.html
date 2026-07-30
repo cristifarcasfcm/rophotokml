@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>ROPhotoKml - APIA Maramureș</title>
+<title>ROPhotoKml - creat de Cristian Farcas</title>
+<link rel="icon" type="image/png" href="icon-192.png">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none}
@@ -26,7 +27,7 @@ html,body{height:100%;overflow:hidden;background:#0d1a0d;color:var(--txt);font-f
   background:linear-gradient(to bottom,rgba(0,0,0,.88) 70%,transparent)
 }
 #top>*{pointer-events:auto}
-.logo{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--g);letter-spacing:.1em;flex-shrink:0}
+.logo{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--g);letter-spacing:.08em;flex-shrink:0}
 #sb{flex:1;min-width:0;padding:5px 10px;border-radius:20px;border:1px solid var(--bord);background:rgba(0,0,0,.65);color:var(--txt);font-size:11px;outline:none;font-family:var(--mono)}
 #sb::placeholder{color:var(--muted)}
 #filter-sel{background:rgba(0,0,0,.6);border:1px solid var(--bord);color:var(--txt);font-family:var(--mono);font-size:10px;padding:4px 6px;border-radius:8px;outline:none;cursor:pointer;flex-shrink:0}
@@ -88,7 +89,7 @@ html,body{height:100%;overflow:hidden;background:#0d1a0d;color:var(--txt);font-f
 #prox{position:fixed;right:8px;bottom:92px;z-index:250;width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,.6);border:2px solid #444;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:8px;color:#666;text-align:center;line-height:1.3;transition:all .4s;pointer-events:none;white-space:pre-line}
 #prox.near{border-color:var(--g);color:var(--g);box-shadow:0 0 14px var(--glow)}
 
-/* PARCEL POPUP  — apare la tap pe parcelă */
+/* PARCEL POPUP — apare la tap pe parcelă */
 #pp-ov{display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.6)}
 #pp-ov.on{display:block}
 #pp-box{
@@ -142,6 +143,43 @@ html,body{height:100%;overflow:hidden;background:#0d1a0d;color:var(--txt);font-f
 #aw-ft button{flex:1;padding:10px;border-radius:8px;font-size:12px;font-family:var(--mono);cursor:pointer;font-weight:600}
 .aw-ok{background:rgba(34,197,94,.2);border:1px solid var(--g);color:var(--g)}
 .aw-cl{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.15);color:var(--muted)}
+
+/* MODAL CĂUTARE ȘI FILTRARE ATRIBUTE AVANSATĂ (#srch-ov / #srch-box) */
+#srch-ov{display:none;position:fixed;inset:0;z-index:3600;background:rgba(0,0,0,.75)}
+#srch-ov.on{display:block}
+#srch-box{
+  display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  z-index:3601;width:94%;max-width:420px;max-height:85vh;
+  background:#061206;border:1px solid var(--bord);border-radius:14px;
+  overflow:hidden;flex-direction:column;box-shadow:0 12px 45px rgba(0,0,0,.95)
+}
+#srch-box.on{display:flex}
+#srch-hd{
+  background:rgba(34,197,94,.15);border-bottom:1px solid var(--bord);
+  padding:12px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0
+}
+#srch-ti{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--g)}
+#srch-hd button{background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer}
+#srch-bar{padding:10px 12px;border-bottom:1px solid var(--bord);flex-shrink:0;background:rgba(0,0,0,.4)}
+#srch-inp{
+  width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--bord);
+  background:rgba(0,0,0,.7);color:var(--txt);font-size:12px;font-family:var(--mono);outline:none
+}
+#srch-inp:focus{border-color:var(--g)}
+#srch-cnt{padding:6px 12px;font-size:10px;color:var(--muted);font-family:var(--mono);flex-shrink:0}
+#srch-list{flex:1;overflow-y:auto;padding:6px 12px;display:flex;flex-direction:column;gap:8px}
+.srch-item{
+  padding:10px 12px;border-radius:10px;border:1px solid var(--bord);background:rgba(34,197,94,.04);
+  cursor:pointer;transition:all .15s;display:flex;flex-direction:column;gap:4px
+}
+.srch-item:active{transform:scale(.98);background:rgba(34,197,94,.15)}
+.srch-item-hd{display:flex;justify-content:space-between;align-items:center}
+.srch-item-nm{font-family:var(--mono);font-size:12px;font-weight:700;color:#FAC775}
+.srch-item-st{font-size:9px;padding:2px 6px;border-radius:12px;font-family:var(--mono)}
+.srch-item-st.done{background:rgba(34,197,94,.2);color:var(--g);border:1px solid var(--g)}
+.srch-item-st.todo{background:rgba(245,158,11,.15);color:var(--a);border:1px solid var(--a)}
+.srch-item-bd{font-family:var(--mono);font-size:10px;color:#cbd5e1;line-height:1.4}
+.srch-item-mtch{color:#a855f7;background:rgba(168,85,247,.15);padding:1px 4px;border-radius:4px}
 
 /* EXIT DIALOG */
 #ex-ov{display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.7)}
@@ -257,7 +295,7 @@ canvas{display:none}
 #spl-bar{height:100%;width:0%;background:var(--g);border-radius:2px;box-shadow:0 0 8px var(--glow);transition:width .05s linear}
 #spl-pct{position:absolute;bottom:-48px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:11px;color:var(--g)}
 #spl-ti{font-family:var(--mono);font-size:28px;font-weight:700;color:var(--g);letter-spacing:.15em;text-shadow:0 0 20px var(--glow);margin-bottom:6px}
-#spl-su{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.1em;margin-bottom:40px}
+#spl-su{font-family:var(--mono);font-size:12px;color:var(--txt);letter-spacing:.08em;margin-bottom:40px;text-align:center;font-weight:600}
 
 /* PROGRESS / TOAST */
 #prog{position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px}
@@ -287,13 +325,15 @@ canvas{display:none}
 </div>
 <div id="sdrop"></div>
 
-<!-- SIDEBAR -->
+<!-- SIDEBAR (cu noua icoană de Căutare/Filtrare printre atribute) -->
 <div id="sidebar">
   <button class="sb" onclick="openKM()" title="KML"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9,15 12,12 15,15"/></svg><span class="sl">KML</span></button>
   <button class="sb" id="bgps" onclick="startGPS()" title="GPS"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg><span class="sl">GPS</span></button>
   <button class="sb" id="bcomp" onclick="startCompass()" title="Busolă"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="12,2 14,9 12,12 10,9"/><polygon points="12,22 14,15 12,12 10,15" opacity=".3"/></svg><span class="sl">Busola</span></button>
   <button class="sb" id="bcam" onclick="toggleCam()" title="Cameră"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg><span class="sl">Camera</span></button>
   <button class="sb wb on" id="bbuf" onclick="toggleBuf()" title="Buffer 10m"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span class="sl">Buffer</span></button>
+  <!-- NOUA ICOANĂ DE FILTRARE/CĂUTARE ATRIBUTE -->
+  <button class="sb" id="bflt" onclick="openAttrSearch()" title="Căutare Avansată Atribute"><svg viewBox="0 0 24 24"><polygon points="22,3 2,3 10,12.46 10,19 14,21 14,12.46 22,3"/><line x1="12" y1="3" x2="12" y2="8" opacity=".3"/></svg><span class="sl">Filtru</span></button>
   <div class="sp"></div>
   <button class="sb" onclick="centerMap()" title="Centru Hartă"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v5M12 18v5M1 12h5M18 12h5"/></svg><span class="sl">Centru</span></button>
   <button class="sb" id="blyr" onclick="toggleLayer()" title="Strat Hartă"><svg viewBox="0 0 24 24"><polygon points="12,2 22,8.5 12,15 2,8.5"/><polyline points="2,15.5 12,22 22,15.5" opacity=".4"/></svg><span class="sl">Strat</span></button>
@@ -365,6 +405,20 @@ canvas{display:none}
     <button class="aw-ok" onclick="closeAW();openCam()">📷 Fotografiaza</button>
     <button class="aw-cl" onclick="closeAW()">Inchide</button>
   </div>
+</div>
+
+<!-- MODAL CĂUTARE ȘI FILTRARE AVANSATĂ ATRIBUTE -->
+<div id="srch-ov" onclick="closeAttrSearch()"></div>
+<div id="srch-box">
+  <div id="srch-hd">
+    <span id="srch-ti">Căutare în Atributele Parcelelor</span>
+    <button onclick="closeAttrSearch()">✕</button>
+  </div>
+  <div id="srch-bar">
+    <input id="srch-inp" type="text" placeholder="Caută RO..., nume fermier, cerere..." oninput="doAttrSearch(this.value)">
+  </div>
+  <div id="srch-cnt">0 parcele găsite</div>
+  <div id="srch-list"></div>
 </div>
 
 <!-- EXIT DIALOG -->
@@ -445,7 +499,8 @@ canvas{display:none}
     <div id="spl-pct">0%</div>
   </div>
   <div id="spl-ti">ROPhotoKml</div>
-  <div id="spl-su">GPS · KML · Control pe Teren APIA Maramureș</div>
+  <!-- CERINȚA 3: Înlocuire APIA Maramureș cu creat de Cristian Farcas -->
+  <div id="spl-su">GPS · KML · creat de Cristian Farcas</div>
 </div>
 
 <!-- PROGRESS / TOAST -->
@@ -509,6 +564,7 @@ function handleBack(){
     ['fullview', 'closeFull'],
     ['prevo', 'discardP'],
     ['camo', 'closeCam'],
+    ['srch-box', 'closeAttrSearch'],
     ['galo', 'closeGallery'],
     ['aw-box', 'closeAW'],
     ['pp-box', 'closePP'],
@@ -1159,7 +1215,107 @@ function deleteParcel(){
   toast('Parcela stearsa', 'wn');
 }
 
-// ── FILTER & SEARCH ──
+// ── CERINȚA 4: MODAL FILTRARE & CĂUTARE AVANSATĂ ÎN TOATE ATRIBUTELE ──
+function openAttrSearch(){
+  if(!feats || !feats.length){
+    toast('Niciun KML sau parcele încărcate', 'wn');
+    return;
+  }
+  document.getElementById('srch-inp').value = '';
+  doAttrSearch('');
+  document.getElementById('srch-ov').classList.add('on');
+  document.getElementById('srch-box').classList.add('on');
+  setTimeout(() => {
+    const inp = document.getElementById('srch-inp');
+    if(inp) inp.focus();
+  }, 100);
+}
+
+function closeAttrSearch(){
+  document.getElementById('srch-ov').classList.remove('on');
+  document.getElementById('srch-box').classList.remove('on');
+}
+
+function doAttrSearch(q){
+  const list = document.getElementById('srch-list');
+  const cnt = document.getElementById('srch-cnt');
+  list.innerHTML = '';
+  
+  const query = (q || '').trim().toLowerCase();
+  
+  // Căutare prin toate parcelele și toate atributele lor
+  let results = [];
+  feats.forEach((f, idx) => {
+    let matchedAttrs = [];
+    const keys = Object.keys(f).filter(k => !k.startsWith('_'));
+    keys.forEach(k => {
+      const valStr = String(f[k] || '');
+      if(query === '' || valStr.toLowerCase().includes(query) || k.toLowerCase().includes(query)){
+        matchedAttrs.push({ key: k, val: valStr });
+      }
+    });
+    // Dacă am găsit potrivire sau query e gol (afișează primele 40)
+    if(matchedAttrs.length > 0){
+      results.push({ f, idx, matchedAttrs });
+    }
+  });
+
+  const displayCount = Math.min(results.length, 60);
+  cnt.textContent = results.length + ' parcele găsite' + (results.length > 60 ? ' (afișate primele 60)' : '');
+
+  if(results.length === 0){
+    list.innerHTML = '<div style="text-align:center;color:var(--muted);font-family:var(--mono);font-size:11px;padding:30px">Nicio parcelă nu corespunde căutării</div>';
+    return;
+  }
+
+  results.slice(0, displayCount).forEach(item => {
+    const f = item.f;
+    const isDone = f._done;
+    const d = document.createElement('div');
+    d.className = 'srch-item';
+    d.onclick = function(){
+      closeAttrSearch();
+      const pl = polyL.find(p => p.f === f);
+      if(pl){
+        selParcel(f, pl.ly, pl.i);
+      } else {
+        curF = f;
+        if(f._ctr) map.setView(f._ctr, 17);
+        openPP(f);
+      }
+    };
+
+    const hd = document.createElement('div');
+    hd.className = 'srch-item-hd';
+    const nm = document.createElement('span');
+    nm.className = 'srch-item-nm';
+    nm.textContent = (selField1 && f[selField1]) ? f[selField1] : (f['__nm__'] || 'Parcela #' + (item.idx + 1));
+    
+    const st = document.createElement('span');
+    st.className = 'srch-item-st ' + (isDone ? 'done' : 'todo');
+    st.textContent = isDone ? '✓ Finalizat' : '○ Nefinalizat';
+    hd.appendChild(nm);
+    hd.appendChild(st);
+    d.appendChild(hd);
+
+    // Sub-informații cu atributele relevante
+    const bd = document.createElement('div');
+    bd.className = 'srch-item-bd';
+    // Arată maxim 3 atribute reprezentative/potrivite
+    const showAttrs = item.matchedAttrs.slice(0, 3);
+    const attrTexts = showAttrs.map(a => {
+      const kLabel = a.key === '__nm__' ? 'Name' : a.key;
+      // Highlight simplu
+      return '<span style="color:#64748b">' + ex(kLabel) + ':</span> <span style="color:#e2e8f0">' + ex(a.val) + '</span>';
+    });
+    bd.innerHTML = attrTexts.join(' &nbsp;|&nbsp; ');
+    d.appendChild(bd);
+
+    list.appendChild(d);
+  });
+}
+
+// ── FILTER & QUICK SEARCH TOP BAR ──
 function onFilter(){
   const v = document.getElementById('filter-sel').value;
   polyL.forEach(pl => {
@@ -1283,7 +1439,7 @@ function startCompass(){
     window.addEventListener('deviceorientation', onOri, true);
     compOn = true;
     document.getElementById('bcomp').classList.add('on');
-    toast('Busola activata', 'ok');
+    toast('Busola activată', 'ok');
   };
   if(typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function'){
     DeviceOrientationEvent.requestPermission().then(r => { if(r === 'granted') go(); });
@@ -1362,22 +1518,42 @@ async function getUAT(la, lo){
   }
 }
 
-// ── CAMERA ──
+// ── CERINȚA 2: CAMERĂ STABILĂ, FĂRĂ BLOCAJ LA DESCHIDERE ──
 function toggleCam(){
   const btn = document.getElementById('bcam');
+  const vid = document.getElementById('vid');
   if(!camOn){
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 4096 }, height: { ideal: 2160 } }, audio: false })
+    // Oprim orice track rămas dinainte pentru a evita blocajele hardware
+    if(mStream){
+      mStream.getTracks().forEach(t => t.stop());
+      mStream = null;
+    }
+    // Setare rezoluție 1920x1080 ideală (foarte clară, nu blochează encoderul Android ca 4K)
+    navigator.mediaDevices.getUserMedia({ 
+      video: { 
+        facingMode: { ideal: 'environment' }, 
+        width: { ideal: 1920 }, 
+        height: { ideal: 1080 } 
+      }, 
+      audio: false 
+    })
       .then(s => {
         mStream = s;
-        document.getElementById('vid').srcObject = s;
+        vid.srcObject = s;
+        vid.play().catch(e => console.warn('Vid play error:', e));
         camOn = true;
         btn.classList.add('on');
         chkProx();
-        toast('Camera pornită', 'ok');
+        toast('Cameră pornită', 'ok');
       })
-      .catch(e => toast('Camera: ' + e.name, 'er'));
+      .catch(e => {
+        camOn = false;
+        btn.classList.remove('on');
+        toast('Cameră: ' + e.name, 'er');
+      });
   } else {
     if(mStream) mStream.getTracks().forEach(t => t.stop());
+    mStream = null;
     camOn = false;
     btn.classList.remove('on');
     closeCam();
@@ -1387,12 +1563,19 @@ function toggleCam(){
 }
 
 function openCam(){
-  if(!camOn){
-    toast('Porniți camera mai întâi (butonul Camera)', 'wn');
+  if(!camOn || !mStream){
+    // Pornire automată cameră dacă nu era deschisă
+    toggleCam();
+    setTimeout(() => {
+      if(camOn) document.getElementById('camo').classList.add('show');
+    }, 400);
     return;
   }
+  const vid = document.getElementById('vid');
+  if(vid && vid.paused) vid.play().catch(() => {});
   document.getElementById('camo').classList.add('show');
 }
+
 function closeCam(){
   document.getElementById('camo').classList.remove('show');
 }
@@ -1441,11 +1624,11 @@ function applyZoomCSS(){
   }, { passive: false });
 })();
 
-// ── CAPTURE & STAMPING (INSCRIPȚIONARE AUTOMATĂ PE IMAGINE) ──
+// ── CERINȚA 1: CAPTURE CU LAYOUT STACKED (FĂRĂ SUPRAPUNERE PE POZĂ) ──
 function doCapture(){
   const vid = document.getElementById('vid'), cnv = document.getElementById('cnv');
   if(!vid || !vid.videoWidth){
-    toast('Flux video indisponibil', 'er');
+    toast('Flux video indisponibil. Reîncercați.', 'er');
     return;
   }
   const w = vid.videoWidth, h = vid.videoHeight;
@@ -1453,50 +1636,55 @@ function doCapture(){
   const ctx = cnv.getContext('2d');
   ctx.drawImage(vid, 0, 0, w, h);
 
-  // ── DESENARE BANNER METADATE APIA PE FOTOGRAFIE ──
-  const bh = Math.max(160, Math.round(h * 0.16));
-  ctx.fillStyle = 'rgba(6, 18, 6, 0.85)';
+  // ── BANNER INFERIOR CU 4 RÂNDURI INDEPENDENTE (ZERO SUPRAPUNERE) ──
+  // Creștem înălțimea benzii la 19% din poză pentru spațiere verticală perfectă
+  const bh = Math.max(220, Math.round(h * 0.19));
+  ctx.fillStyle = 'rgba(6, 18, 6, 0.88)';
   ctx.fillRect(0, h - bh, w, bh);
 
-  // Linia superioară APIA verde / portocaliu
+  // Liniile decorative de sus (verde + portocaliu)
   ctx.fillStyle = '#22c55e';
-  ctx.fillRect(0, h - bh, w, 6);
+  ctx.fillRect(0, h - bh, w, 5);
+  ctx.fillStyle = '#f59e0b';
+  ctx.fillRect(0, h - bh + 5, w, 2);
 
   const pd = n => String(n).padStart(2, '0');
   const now = new Date();
   const dateStr = pd(now.getDate()) + '.' + pd(now.getMonth() + 1) + '.' + now.getFullYear() + ' ' + pd(now.getHours()) + ':' + pd(now.getMinutes()) + ':' + pd(now.getSeconds());
 
-  const parcelTxt = curF ? (lbl(curF)) : 'PARCELA NECONTROLATĂ';
-  const gpsTxt = 'GPS: ' + (lat ? lat.toFixed(6) + '°, ' + lon.toFixed(6) + '°' : 'N/A');
-  const accTxt = 'Acuratețe: ' + (acc ? '±' + acc.toFixed(1) + 'm' : '—') + ' | Altitudine: ' + (alt != null ? alt.toFixed(0) + 'm' : '—');
-  const dirTxt = 'Direcție: ' + (hdg != null ? hdg + '° ' + cdir(hdg) : '—');
-  const uatTxt = 'UAT: ' + (cachedUAT || 'APIA MARAMUREȘ - CONTROL PE TEREN');
+  const parcelTxt = curF ? lbl(curF) : 'PARCELA NECONTROLATĂ';
+  const gpsTxt = 'GPS: ' + (lat ? lat.toFixed(6) + '°, ' + lon.toFixed(6) + '°' : 'N/A') + ' | Alt: ' + (alt != null ? alt.toFixed(0) + 'm' : '—') + ' | Acc: ' + (acc ? '±' + acc.toFixed(1) + 'm' : '—');
+  const timeDirTxt = 'Data: ' + dateStr + ' | Dir: ' + (hdg != null ? hdg + '° ' + cdir(hdg) : '—');
+  const uatTxt = 'Locație: ' + (cachedUAT || 'APIA MARAMUREȘ - CONTROL PE TEREN');
 
-  // Rândul 1: Parcel ID / Nume (Mare, auriu)
+  // Toate cele 4 rânduri sunt aliniate la STÂNGA, având coordonate Y diferite -> NICIODATĂ nu se vor suprapune!
+  const leftX = Math.round(w * 0.035);
+  const maxW = Math.round(w * 0.93);
+
+  // Rândul 1 (Y = 24% din bh): Nume / ID Parcelă (Auriu #FAC775)
+  ctx.textAlign = 'left';
   ctx.fillStyle = '#FAC775';
-  ctx.font = 'bold ' + Math.round(bh * 0.22) + 'px monospace';
-  ctx.fillText(parcelTxt, Math.round(w * 0.03), h - bh + Math.round(bh * 0.32));
+  ctx.font = 'bold ' + Math.round(bh * 0.20) + 'px monospace';
+  ctx.fillText(parcelTxt, leftX, h - bh + Math.round(bh * 0.24), maxW);
 
-  // Rândul 2: Coordonate GPS & Dată / Oră
+  // Rândul 2 (Y = 48% din bh): Coordonate GPS & Altitudine & Acuratețe (Alb #ffffff)
   ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold ' + Math.round(bh * 0.16) + 'px monospace';
-  ctx.fillText(gpsTxt, Math.round(w * 0.03), h - bh + Math.round(bh * 0.56));
-  ctx.textAlign = 'right';
-  ctx.fillText(dateStr, w - Math.round(w * 0.03), h - bh + Math.round(bh * 0.56));
-  ctx.textAlign = 'left';
+  ctx.font = 'bold ' + Math.round(bh * 0.15) + 'px monospace';
+  ctx.fillText(gpsTxt, leftX, h - bh + Math.round(bh * 0.48), maxW);
 
-  // Rândul 3: Acuratețe, Altitudine, Direcție, UAT
+  // Rândul 3 (Y = 70% din bh): Data / Ora & Direcție / Busolă (Alb #ffffff)
+  ctx.font = Math.round(bh * 0.15) + 'px monospace';
+  ctx.fillText(timeDirTxt, leftX, h - bh + Math.round(bh * 0.70), maxW);
+
+  // Rândul 4 (Y = 90% din bh): UAT / Localitate & APIA (Albastru deschis #93c5fd)
   ctx.fillStyle = '#93c5fd';
-  ctx.font = Math.round(bh * 0.14) + 'px monospace';
-  ctx.fillText(accTxt + ' | ' + dirTxt, Math.round(w * 0.03), h - bh + Math.round(bh * 0.82));
-  ctx.textAlign = 'right';
-  ctx.fillText(uatTxt, w - Math.round(w * 0.03), h - bh + Math.round(bh * 0.82));
-  ctx.textAlign = 'left';
+  ctx.font = Math.round(bh * 0.13) + 'px monospace';
+  ctx.fillText(uatTxt, leftX, h - bh + Math.round(bh * 0.90), maxW);
 
   // Salvează Base64
   let b64 = cnv.toDataURL('image/jpeg', 0.92);
 
-  // Nume fisier
+  // Nume fișier
   const cleanId = (curF && ((selField1 && curF[selField1]) || curF['__nm__'])) ? String((selField1 && curF[selField1]) || curF['__nm__']).replace(/[^a-zA-Z0-9]/g, '_') : 'parcela';
   const fname = cleanId + '_' + now.getFullYear() + pd(now.getMonth() + 1) + pd(now.getDate()) + '_' + pd(now.getHours()) + pd(now.getMinutes()) + pd(now.getSeconds()) + '.jpg';
 
@@ -1521,19 +1709,16 @@ function saveP(){
   const pd = n => String(n).padStart(2, '0');
   const dtExif = now.getFullYear() + ':' + pd(now.getMonth() + 1) + ':' + pd(now.getDate()) + ' ' + pd(now.getHours()) + ':' + pd(now.getMinutes()) + ':' + pd(now.getSeconds());
 
-  // Inserare EXIF GPS metadata in Base64 JPEG
   const finalB64 = injectEXIFInJPEG(rawB64, lat || 0, lon || 0, alt || 0, hdg || 0, dtExif);
 
-  // Apelare NativeBridge Android sau salvare browser download
   if(window.AndroidApp && window.AndroidApp.savePhoto){
     const res = window.AndroidApp.savePhoto(finalB64, lastFname);
     if(res && res.startsWith('OK:')){
-      toast('✓ Poză geolocalizată salvată în DCIM/ROPhotoKml', 'ok');
+      toast('✓ Poză salvată în DCIM/ROPhotoKml', 'ok');
     } else {
       toast('Eroare salvare Android: ' + res, 'er');
     }
   } else {
-    // Fallback browser download
     const a = document.createElement('a');
     a.href = 'data:image/jpeg;base64,' + finalB64;
     a.download = lastFname;
@@ -1543,7 +1728,6 @@ function saveP(){
     toast('Poză salvată (download browser)', 'ok');
   }
 
-  // Adaugă în galeria sesiunii
   pCnt++;
   document.getElementById('pbg').style.display = 'inline-block';
   document.getElementById('pbg').textContent = pCnt + ' foto';
@@ -1559,7 +1743,6 @@ function injectEXIFInJPEG(base64Raw, lat, lon, alt, hdg, dtStr){
     const buf = new Uint8Array(len);
     for(let i = 0; i < len; i++) buf[i] = bin.charCodeAt(i);
 
-    // Verifică header JPEG (0xFF 0xD8)
     if(buf[0] !== 0xFF || buf[1] !== 0xD8) return base64Raw;
 
     const exifBytes = buildEXIFBytes(dtStr, lat, lon, alt, hdg);
@@ -1571,7 +1754,6 @@ function injectEXIFInJPEG(base64Raw, lat, lon, alt, hdg, dtStr){
     app1Segment[3] = app1Len & 0xFF;
     app1Segment.set(exifBytes, 4);
 
-    // Găsim poziția după SOI și APP0 (dacă există)
     let pos = 2;
     if(buf[2] === 0xFF && buf[3] === 0xE0){
       const app0Len = (buf[4] << 8) | buf[5];
@@ -1583,7 +1765,6 @@ function injectEXIFInJPEG(base64Raw, lat, lon, alt, hdg, dtStr){
     newBuf.set(app1Segment, pos);
     newBuf.set(buf.subarray(pos), pos + app1Segment.length);
 
-    // Encode înapoi la Base64
     let res = '';
     const chunk = 8192;
     for(let i = 0; i < newBuf.length; i += chunk){
@@ -1630,8 +1811,8 @@ function buildEXIFBytes(dtStr, lat, lon, alt, hdg){
   const absLat = lat ? Math.abs(lat) : 0;
   const absLon = lon ? Math.abs(lon) : 0;
   const absAlt = alt ? Math.abs(alt) : 0;
-  const latRef = (lat && lat >= 0) ? 0x4E000000 : 0x53000000; // 'N' sau 'S'
-  const lonRef = (lon && lon >= 0) ? 0x45000000 : 0x57000000; // 'E' sau 'W'
+  const latRef = (lat && lat >= 0) ? 0x4E000000 : 0x53000000;
+  const lonRef = (lon && lon >= 0) ? 0x45000000 : 0x57000000;
 
   const latRat = gpsRat(absLat);
   const lonRat = gpsRat(absLon);
@@ -1653,7 +1834,7 @@ function buildEXIFBytes(dtStr, lat, lon, alt, hdg){
   const dtOff = GPS_DATA_OFF + 56;
   let ifd0 = [...w2(IFD0_ENTRIES)];
   ifd0 = [...ifd0, ...ifdEntry(0x0132, 2, 20, dtOff)];
-  ifd0 = [...ifd0, ...ifdEntry(0x013B, 2, 22, dtOff + 20)];
+  ifd0 = [...ifd0, ...ifdEntry(0x013B, 2, 24, dtOff + 20)];
   ifd0 = [...ifd0, ...ifdEntry(0x8825, 4, 1, GPS_IFD_OFF)];
   ifd0 = [...ifd0, ...ifdEntry(0x9003, 2, 20, dtOff)];
   ifd0 = [...ifd0, ...w4(0)];
