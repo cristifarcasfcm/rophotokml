@@ -41,8 +41,12 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
-      - name: Ensure MainActivity and icons are configured
+      - name: Generate custom icons and copy MainActivity & icon assets
         run: |
+          if [ -f "generate_icons.py" ]; then
+            python3 generate_icons.py
+            echo "Icons generated OK"
+          fi
           if [ -f "write_main.py" ]; then
             python3 write_main.py
           else
