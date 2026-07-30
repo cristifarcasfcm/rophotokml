@@ -181,6 +181,32 @@ html,body{height:100%;overflow:hidden;background:#0d1a0d;color:var(--txt);font-f
 .srch-item-bd{font-family:var(--mono);font-size:10px;color:#cbd5e1;line-height:1.4}
 .srch-item-mtch{color:#a855f7;background:rgba(168,85,247,.15);padding:1px 4px;border-radius:4px}
 
+/* MODAL SELECTARE HARTĂ DE FUNDAL (#lyr-ov / #lyr-box) */
+#lyr-ov{display:none;position:fixed;inset:0;z-index:3600;background:rgba(0,0,0,.75)}
+#lyr-ov.on{display:block}
+#lyr-box{
+  display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  z-index:3601;width:88%;max-width:340px;
+  background:#061206;border:1px solid var(--bord);border-radius:14px;
+  overflow:hidden;flex-direction:column;box-shadow:0 12px 45px rgba(0,0,0,.95)
+}
+#lyr-box.on{display:flex}
+#lyr-hd{
+  background:rgba(34,197,94,.15);border-bottom:1px solid var(--bord);
+  padding:12px 14px;display:flex;align-items:center;justify-content:space-between
+}
+#lyr-ti{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--g)}
+#lyr-hd button{background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer}
+#lyr-list{padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.lyr-item{
+  padding:12px 14px;border-radius:10px;border:1px solid var(--bord);background:rgba(34,197,94,.05);
+  cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:space-between;
+  font-family:var(--mono);font-size:11px;color:var(--txt)
+}
+.lyr-item.act{border-color:var(--g);background:rgba(34,197,94,.18);color:var(--g);font-weight:700}
+.lyr-item:active{transform:scale(.97)}
+.lyr-item-sub{font-size:9px;color:var(--muted);font-weight:normal;margin-top:2px}
+
 /* EXIT DIALOG */
 #ex-ov{display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.7)}
 #ex-ov.on{display:block}
@@ -325,18 +351,18 @@ canvas{display:none}
 </div>
 <div id="sdrop"></div>
 
-<!-- SIDEBAR (cu noua icoană de Căutare/Filtrare printre atribute) -->
+<!-- SIDEBAR -->
 <div id="sidebar">
   <button class="sb" onclick="openKM()" title="KML"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9,15 12,12 15,15"/></svg><span class="sl">KML</span></button>
   <button class="sb" id="bgps" onclick="startGPS()" title="GPS"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg><span class="sl">GPS</span></button>
   <button class="sb" id="bcomp" onclick="startCompass()" title="Busolă"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="12,2 14,9 12,12 10,9"/><polygon points="12,22 14,15 12,12 10,15" opacity=".3"/></svg><span class="sl">Busola</span></button>
   <button class="sb" id="bcam" onclick="toggleCam()" title="Cameră"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg><span class="sl">Camera</span></button>
   <button class="sb wb on" id="bbuf" onclick="toggleBuf()" title="Buffer 10m"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span class="sl">Buffer</span></button>
-  <!-- NOUA ICOANĂ DE FILTRARE/CĂUTARE ATRIBUTE -->
   <button class="sb" id="bflt" onclick="openAttrSearch()" title="Căutare Avansată Atribute"><svg viewBox="0 0 24 24"><polygon points="22,3 2,3 10,12.46 10,19 14,21 14,12.46 22,3"/><line x1="12" y1="3" x2="12" y2="8" opacity=".3"/></svg><span class="sl">Filtru</span></button>
   <div class="sp"></div>
   <button class="sb" onclick="centerMap()" title="Centru Hartă"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v5M12 18v5M1 12h5M18 12h5"/></svg><span class="sl">Centru</span></button>
-  <button class="sb" id="blyr" onclick="toggleLayer()" title="Strat Hartă"><svg viewBox="0 0 24 24"><polygon points="12,2 22,8.5 12,15 2,8.5"/><polyline points="2,15.5 12,22 22,15.5" opacity=".4"/></svg><span class="sl">Strat</span></button>
+  <!-- CERINȚA 2: Buton Strat Hartă care deschide modalul cu modele de hartă de fundal -->
+  <button class="sb" id="blyr" onclick="openLayerMenu()" title="Selectare Hartă de Fundal"><svg viewBox="0 0 24 24"><polygon points="12,2 22,8.5 12,15 2,8.5"/><polyline points="2,15.5 12,22 22,15.5" opacity=".4"/></svg><span class="sl">Strat</span></button>
 </div>
 
 <!-- BOTTOM BAR -->
@@ -421,6 +447,52 @@ canvas{display:none}
   <div id="srch-list"></div>
 </div>
 
+<!-- MODAL SELECTARE HARTĂ DE FUNDAL (#lyr-ov / #lyr-box) -->
+<div id="lyr-ov" onclick="closeLayerMenu()"></div>
+<div id="lyr-box">
+  <div id="lyr-hd">
+    <span id="lyr-ti">Model Hartă de Fundal</span>
+    <button onclick="closeLayerMenu()">✕</button>
+  </div>
+  <div id="lyr-list">
+    <div class="lyr-item" id="lyr-ghyb" onclick="selectLayer('ghyb')">
+      <div>
+        <div>🛰️ Google Satelit Hybrid</div>
+        <div class="lyr-item-sub">Satelit Google + localități și drumuri</div>
+      </div>
+      <span class="lyr-chk">✓</span>
+    </div>
+    <div class="lyr-item" id="lyr-grod" onclick="selectLayer('grod')">
+      <div>
+        <div>🗺️ Google Drumuri (Roadmap)</div>
+        <div class="lyr-item-sub">Străzi, drumuri, granițe și localități</div>
+      </div>
+      <span class="lyr-chk">✓</span>
+    </div>
+    <div class="lyr-item" id="lyr-ehyb" onclick="selectLayer('ehyb')">
+      <div>
+        <div>🌍 ESRI Satelit Hybrid</div>
+        <div class="lyr-item-sub">Satelit ESRI + etichete locuri și granițe</div>
+      </div>
+      <span class="lyr-chk">✓</span>
+    </div>
+    <div class="lyr-item" id="lyr-esat" onclick="selectLayer('esat')">
+      <div>
+        <div>🛰️ ESRI Satelit Simplu</div>
+        <div class="lyr-item-sub">Doar imagini satelitare ESRI</div>
+      </div>
+      <span class="lyr-chk">✓</span>
+    </div>
+    <div class="lyr-item" id="lyr-osm" onclick="selectLayer('osm')">
+      <div>
+        <div>🗺️ OpenStreetMap</div>
+        <div class="lyr-item-sub">Hartă drumuri alternativă liberă</div>
+      </div>
+      <span class="lyr-chk">✓</span>
+    </div>
+  </div>
+</div>
+
 <!-- EXIT DIALOG -->
 <div id="ex-ov"></div>
 <div id="ex-box">
@@ -499,7 +571,6 @@ canvas{display:none}
     <div id="spl-pct">0%</div>
   </div>
   <div id="spl-ti">ROPhotoKml</div>
-  <!-- CERINȚA 3: Înlocuire APIA Maramureș cu creat de Cristian Farcas -->
   <div id="spl-su">GPS · KML · creat de Cristian Farcas</div>
 </div>
 
@@ -534,9 +605,10 @@ let lat = null, lon = null, acc = null, alt = null, hdg = null;
 let gpsOn = false, compOn = false, camOn = false, bufOn = true;
 let curF = null, selLy = null;
 let lastB64 = null, lastFname = '', pCnt = 0;
-let mStream = null, isSat = true, gallery = [], currentZoom = 1.0;
+let mStream = null, gallery = [], currentZoom = 1.0;
 let cachedUAT = '';
 const LS = 'rphkml_v1';
+const LS_LYR = 'rphkml_layer_v1';
 
 // ── BACK BUTTON HANDLING ──
 (function(){
@@ -565,6 +637,7 @@ function handleBack(){
     ['prevo', 'discardP'],
     ['camo', 'closeCam'],
     ['srch-box', 'closeAttrSearch'],
+    ['lyr-box', 'closeLayerMenu'],
     ['galo', 'closeGallery'],
     ['aw-box', 'closeAW'],
     ['pp-box', 'closePP'],
@@ -690,22 +763,59 @@ function loadState(){
   } catch(e) {}
 }
 
-// ── MAP ──
+// ── CERINȚA 2: HĂRȚI DE FUNDAL MULTIPLE (Satelit Hybrid, Drumuri Google/OSM, Esri) ──
 map = L.map('map', { center: [47.65, 23.58], zoom: 13, zoomControl: false, attributionControl: false, tap: true, tapTolerance: 15 });
-const lSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 21, maxNativeZoom: 19 });
-const lOSM = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 21, maxNativeZoom: 19 });
-lSat.addTo(map);
 
-function toggleLayer(){
-  if(isSat){
-    map.removeLayer(lSat);
-    lOSM.addTo(map);
-  } else {
-    map.removeLayer(lOSM);
-    lSat.addTo(map);
+const mapLayers = {
+  ghyb: L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 21, maxNativeZoom: 19 }),
+  grod: L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { maxZoom: 21, maxNativeZoom: 19 }),
+  ehyb: L.layerGroup([
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 21, maxNativeZoom: 19 }),
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 21, maxNativeZoom: 19 })
+  ]),
+  esat: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 21, maxNativeZoom: 19 }),
+  osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 21, maxNativeZoom: 19 })
+};
+
+let activeLayerKey = localStorage.getItem(LS_LYR) || 'ghyb';
+if(!mapLayers[activeLayerKey]) activeLayerKey = 'ghyb';
+mapLayers[activeLayerKey].addTo(map);
+
+function openLayerMenu(){
+  document.querySelectorAll('.lyr-item').forEach(el => {
+    const key = el.id.replace('lyr-', '');
+    el.classList.toggle('act', key === activeLayerKey);
+    const chk = el.querySelector('.lyr-chk');
+    if(chk) chk.style.display = (key === activeLayerKey) ? 'inline' : 'none';
+  });
+  document.getElementById('lyr-ov').classList.add('on');
+  document.getElementById('lyr-box').classList.add('on');
+}
+
+function closeLayerMenu(){
+  document.getElementById('lyr-ov').classList.remove('on');
+  document.getElementById('lyr-box').classList.remove('on');
+}
+
+function selectLayer(key){
+  if(!mapLayers[key]) return;
+  if(key === activeLayerKey){
+    closeLayerMenu();
+    return;
   }
-  isSat = !isSat;
-  document.getElementById('blyr').classList.toggle('on', !isSat);
+  map.removeLayer(mapLayers[activeLayerKey]);
+  activeLayerKey = key;
+  mapLayers[activeLayerKey].addTo(map);
+  localStorage.setItem(LS_LYR, key);
+  closeLayerMenu();
+  const names = {
+    ghyb: 'Google Satelit Hybrid',
+    grod: 'Google Drumuri',
+    ehyb: 'ESRI Satelit Hybrid',
+    esat: 'ESRI Satelit Simplu',
+    osm: 'OpenStreetMap'
+  };
+  toast('Hartă: ' + (names[key] || key), 'ok');
 }
 
 function centerMap(){
@@ -1215,7 +1325,7 @@ function deleteParcel(){
   toast('Parcela stearsa', 'wn');
 }
 
-// ── CERINȚA 4: MODAL FILTRARE & CĂUTARE AVANSATĂ ÎN TOATE ATRIBUTELE ──
+// ── CĂUTARE AVANSATĂ ÎN TOATE ATRIBUTELE ──
 function openAttrSearch(){
   if(!feats || !feats.length){
     toast('Niciun KML sau parcele încărcate', 'wn');
@@ -1243,7 +1353,6 @@ function doAttrSearch(q){
   
   const query = (q || '').trim().toLowerCase();
   
-  // Căutare prin toate parcelele și toate atributele lor
   let results = [];
   feats.forEach((f, idx) => {
     let matchedAttrs = [];
@@ -1254,7 +1363,6 @@ function doAttrSearch(q){
         matchedAttrs.push({ key: k, val: valStr });
       }
     });
-    // Dacă am găsit potrivire sau query e gol (afișează primele 40)
     if(matchedAttrs.length > 0){
       results.push({ f, idx, matchedAttrs });
     }
@@ -1298,14 +1406,11 @@ function doAttrSearch(q){
     hd.appendChild(st);
     d.appendChild(hd);
 
-    // Sub-informații cu atributele relevante
     const bd = document.createElement('div');
     bd.className = 'srch-item-bd';
-    // Arată maxim 3 atribute reprezentative/potrivite
     const showAttrs = item.matchedAttrs.slice(0, 3);
     const attrTexts = showAttrs.map(a => {
       const kLabel = a.key === '__nm__' ? 'Name' : a.key;
-      // Highlight simplu
       return '<span style="color:#64748b">' + ex(kLabel) + ':</span> <span style="color:#e2e8f0">' + ex(a.val) + '</span>';
     });
     bd.innerHTML = attrTexts.join(' &nbsp;|&nbsp; ');
@@ -1504,31 +1609,34 @@ function chkProx(){
   sht.disabled = !(near && camOn);
 }
 
-// ── GEOCODING UAT ──
+// ── CERINȚA 1: GEOCODING DETALIAT PENTRU LOCALITATE ȘI ADRESĂ COMPLETĂ ──
 async function getUAT(la, lo){
   if(cachedUAT) return cachedUAT;
   try {
     const r = await fetch('https://nominatim.openstreetmap.org/reverse?lat=' + la + '&lon=' + lo + '&format=json&accept-language=ro');
     const d = await r.json();
     const a = d.address || {};
-    cachedUAT = (a.city || a.town || a.village || a.municipality || a.county || '').toUpperCase();
+    const loc = (a.city || a.town || a.village || a.municipality || '').toUpperCase();
+    const addr = [
+      a.road || a.suburb || a.hamlet || a.neighbourhood,
+      a.county || 'MARAMUREȘ'
+    ].filter(Boolean).join(', ');
+    cachedUAT = loc ? (loc + (addr ? ' | ' + addr : '')) : (d.display_name ? d.display_name.split(',').slice(0, 3).join(', ') : 'APIA MARAMUREȘ - CONTROL PE TEREN');
     return cachedUAT;
   } catch(e) {
     return '';
   }
 }
 
-// ── CERINȚA 2: CAMERĂ STABILĂ, FĂRĂ BLOCAJ LA DESCHIDERE ──
+// ── CAMERĂ STABILĂ, FĂRĂ BLOCAJ LA DESCHIDERE ──
 function toggleCam(){
   const btn = document.getElementById('bcam');
   const vid = document.getElementById('vid');
   if(!camOn){
-    // Oprim orice track rămas dinainte pentru a evita blocajele hardware
     if(mStream){
       mStream.getTracks().forEach(t => t.stop());
       mStream = null;
     }
-    // Setare rezoluție 1920x1080 ideală (foarte clară, nu blochează encoderul Android ca 4K)
     navigator.mediaDevices.getUserMedia({ 
       video: { 
         facingMode: { ideal: 'environment' }, 
@@ -1564,7 +1672,6 @@ function toggleCam(){
 
 function openCam(){
   if(!camOn || !mStream){
-    // Pornire automată cameră dacă nu era deschisă
     toggleCam();
     setTimeout(() => {
       if(camOn) document.getElementById('camo').classList.add('show');
@@ -1624,7 +1731,16 @@ function applyZoomCSS(){
   }, { passive: false });
 })();
 
-// ── CERINȚA 1: CAPTURE CU LAYOUT STACKED (FĂRĂ SUPRAPUNERE PE POZĂ) ──
+// ── CERINȚA 1: ARANJAREA DETALIILOR PE 6 RÂNDURI INDEPENDENTE (FĂRĂ SUPRAPUNERE) ──
+function valOnly(f, key){
+  if(!f) return 'PARCELA NECONTROLATA';
+  let v = (key && f[key] !== undefined) ? f[key] : f['__nm__'];
+  if(!v){
+    v = f['name_calc'] || f['NAME_CALC'] || f[Object.keys(f).find(k => !k.startsWith('_'))] || '—';
+  }
+  return String(v).trim();
+}
+
 function doCapture(){
   const vid = document.getElementById('vid'), cnv = document.getElementById('cnv');
   if(!vid || !vid.videoWidth){
@@ -1636,13 +1752,13 @@ function doCapture(){
   const ctx = cnv.getContext('2d');
   ctx.drawImage(vid, 0, 0, w, h);
 
-  // ── BANNER INFERIOR CU 4 RÂNDURI INDEPENDENTE (ZERO SUPRAPUNERE) ──
-  // Creștem înălțimea benzii la 19% din poză pentru spațiere verticală perfectă
-  const bh = Math.max(220, Math.round(h * 0.19));
+  // ── BANNER INFERIOR CU 6 RÂNDURI INDEPENDENTE SI ALINIATE LA STÂNGA ──
+  // Înălțimea benzii: 23% din poză pentru spațiere aerisită între cele 6 linii
+  const bh = Math.max(260, Math.round(h * 0.23));
   ctx.fillStyle = 'rgba(6, 18, 6, 0.88)';
   ctx.fillRect(0, h - bh, w, bh);
 
-  // Liniile decorative de sus (verde + portocaliu)
+  // Linii superioare APIA
   ctx.fillStyle = '#22c55e';
   ctx.fillRect(0, h - bh, w, 5);
   ctx.fillStyle = '#f59e0b';
@@ -1652,39 +1768,68 @@ function doCapture(){
   const now = new Date();
   const dateStr = pd(now.getDate()) + '.' + pd(now.getMonth() + 1) + '.' + now.getFullYear() + ' ' + pd(now.getHours()) + ':' + pd(now.getMinutes()) + ':' + pd(now.getSeconds());
 
-  const parcelTxt = curF ? lbl(curF) : 'PARCELA NECONTROLATĂ';
-  const gpsTxt = 'GPS: ' + (lat ? lat.toFixed(6) + '°, ' + lon.toFixed(6) + '°' : 'N/A') + ' | Alt: ' + (alt != null ? alt.toFixed(0) + 'm' : '—') + ' | Acc: ' + (acc ? '±' + acc.toFixed(1) + 'm' : '—');
-  const timeDirTxt = 'Data: ' + dateStr + ' | Dir: ' + (hdg != null ? hdg + '° ' + cdir(hdg) : '—');
-  const uatTxt = 'Locație: ' + (cachedUAT || 'APIA MARAMUREȘ - CONTROL PE TEREN');
+  // 1) Atributul scris în name_calc / câmpul 1 (FĂRĂ denumirea atributului)
+  const line1Txt = curF ? valOnly(curF, selField1) : 'PARCELA NECONTROLATA';
 
-  // Toate cele 4 rânduri sunt aliniate la STÂNGA, având coordonate Y diferite -> NICIODATĂ nu se vor suprapune!
+  // 2) Atributul 2 selectat (din selField2 sau al doilea din parcelă)
+  const line2Txt = (selField2 && curF && curF[selField2] !== undefined)
+    ? (selField2 + ': ' + curF[selField2])
+    : (Object.keys(curF || {}).filter(k => !k.startsWith('_') && k !== selField1 && k !== '__nm__').length > 0
+      ? (() => {
+          const k2 = Object.keys(curF).find(k => !k.startsWith('_') && k !== selField1 && k !== '__nm__');
+          return k2 ? (k2 + ': ' + curF[k2]) : '';
+        })()
+      : '');
+
+  // 3) Coordonate (Latitudine, Longitudine)
+  const line3Txt = lat ? (lat.toFixed(6) + '°, ' + lon.toFixed(6) + '°') : 'N/A';
+
+  // 4) Altitudine ; Acuratețe ; Orientare
+  const altV = alt != null ? alt.toFixed(0) + 'm' : '—';
+  const accV = acc ? '±' + acc.toFixed(1) + 'm' : '—';
+  const dirV = hdg != null ? hdg + '° ' + cdir(hdg) : '—';
+  const line4Txt = altV + ' ; ' + accV + ' ; ' + dirV;
+
+  // 5) Data si ora fotografierii
+  const line5Txt = dateStr;
+
+  // 6) Localitatea si adresa unde a fost facuta fotografia
+  const line6Txt = cachedUAT || 'BAIA MARE | APIA MARAMUREȘ CONTROL PE TEREN';
+
   const leftX = Math.round(w * 0.035);
   const maxW = Math.round(w * 0.93);
-
-  // Rândul 1 (Y = 24% din bh): Nume / ID Parcelă (Auriu #FAC775)
   ctx.textAlign = 'left';
+
+  // Rând 1 (Y = 16% din bh) -> Auriu #FAC775 - Mare
   ctx.fillStyle = '#FAC775';
-  ctx.font = 'bold ' + Math.round(bh * 0.20) + 'px monospace';
-  ctx.fillText(parcelTxt, leftX, h - bh + Math.round(bh * 0.24), maxW);
+  ctx.font = 'bold ' + Math.round(bh * 0.16) + 'px monospace';
+  ctx.fillText(line1Txt, leftX, h - bh + Math.round(bh * 0.16), maxW);
 
-  // Rândul 2 (Y = 48% din bh): Coordonate GPS & Altitudine & Acuratețe (Alb #ffffff)
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold ' + Math.round(bh * 0.15) + 'px monospace';
-  ctx.fillText(gpsTxt, leftX, h - bh + Math.round(bh * 0.48), maxW);
+  // Rând 2 (Y = 32% din bh) -> Auriu deschis #FDE68A
+  if(line2Txt){
+    ctx.fillStyle = '#FDE68A';
+    ctx.font = 'bold ' + Math.round(bh * 0.12) + 'px monospace';
+    ctx.fillText(line2Txt, leftX, h - bh + Math.round(bh * 0.32), maxW);
+  }
 
-  // Rândul 3 (Y = 70% din bh): Data / Ora & Direcție / Busolă (Alb #ffffff)
-  ctx.font = Math.round(bh * 0.15) + 'px monospace';
-  ctx.fillText(timeDirTxt, leftX, h - bh + Math.round(bh * 0.70), maxW);
+  // Rând 3 (Y = 48% din bh) -> Coordonate (Alb #FFFFFF)
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = 'bold ' + Math.round(bh * 0.13) + 'px monospace';
+  ctx.fillText(line3Txt, leftX, h - bh + Math.round(bh * 0.48), maxW);
 
-  // Rândul 4 (Y = 90% din bh): UAT / Localitate & APIA (Albastru deschis #93c5fd)
-  ctx.fillStyle = '#93c5fd';
-  ctx.font = Math.round(bh * 0.13) + 'px monospace';
-  ctx.fillText(uatTxt, leftX, h - bh + Math.round(bh * 0.90), maxW);
+  // Rând 4 (Y = 64% din bh) -> Alt ; Acc ; Dir (Alb #FFFFFF)
+  ctx.font = Math.round(bh * 0.12) + 'px monospace';
+  ctx.fillText(line4Txt, leftX, h - bh + Math.round(bh * 0.64), maxW);
 
-  // Salvează Base64
+  // Rând 5 (Y = 80% din bh) -> Data si ora (Alb #FFFFFF)
+  ctx.fillText(line5Txt, leftX, h - bh + Math.round(bh * 0.80), maxW);
+
+  // Rând 6 (Y = 94% din bh) -> Localitate si adresa (Albastru #93C5FD)
+  ctx.fillStyle = '#93C5FD';
+  ctx.font = Math.round(bh * 0.11) + 'px monospace';
+  ctx.fillText(line6Txt, leftX, h - bh + Math.round(bh * 0.94), maxW);
+
   let b64 = cnv.toDataURL('image/jpeg', 0.92);
-
-  // Nume fișier
   const cleanId = (curF && ((selField1 && curF[selField1]) || curF['__nm__'])) ? String((selField1 && curF[selField1]) || curF['__nm__']).replace(/[^a-zA-Z0-9]/g, '_') : 'parcela';
   const fname = cleanId + '_' + now.getFullYear() + pd(now.getMonth() + 1) + pd(now.getDate()) + '_' + pd(now.getHours()) + pd(now.getMinutes()) + pd(now.getSeconds()) + '.jpg';
 
