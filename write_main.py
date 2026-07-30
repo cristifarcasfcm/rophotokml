@@ -1,18 +1,15 @@
 #!/usr/bin/env python3
 import os, shutil
 
-# Calea destinație pentru MainActivity.java în proiectul Capacitor Android
 target_dir = "android/app/src/main/java/ro/rophotokml/app"
 target_file = os.path.join(target_dir, "MainActivity.java")
 
 os.makedirs(target_dir, exist_ok=True)
 
-# Dacă fișierul MainActivity.java există în rădăcina proiectului, copiem direct (fără risc de corupere la escape-uri)
 if os.path.exists("MainActivity.java"):
     shutil.copy("MainActivity.java", target_file)
     print("MainActivity.java copiat cu succes din rădăcina proiectului în:", target_file)
 else:
-    # Altfel, generăm fișierul curat direct din Python
     java_code = """package ro.rophotokml.app;
 
 import android.content.Intent;
@@ -170,7 +167,6 @@ public class MainActivity extends BridgeActivity {
         f.write(java_code)
     print("MainActivity.java generat cu succes în:", target_file)
 
-# Copiază iconițele în folderele Android
 icon_map = [
     ('icon-48.png',  'android/app/src/main/res/mipmap-mdpi/ic_launcher.png'),
     ('icon-72.png',  'android/app/src/main/res/mipmap-hdpi/ic_launcher.png'),
@@ -182,6 +178,11 @@ icon_map = [
     ('icon-96.png',  'android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png'),
     ('icon-144.png', 'android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png'),
     ('icon-192.png', 'android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png'),
+    ('icon-48.png',  'android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png'),
+    ('icon-72.png',  'android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png'),
+    ('icon-96.png',  'android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png'),
+    ('icon-144.png', 'android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png'),
+    ('icon-192.png', 'android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png'),
 ]
 
 for src_icon, dst in icon_map:
