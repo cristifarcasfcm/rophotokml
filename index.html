@@ -361,7 +361,6 @@ canvas{display:none}
   <button class="sb" id="bflt" onclick="openAttrSearch()" title="Căutare Avansată Atribute"><svg viewBox="0 0 24 24"><polygon points="22,3 2,3 10,12.46 10,19 14,21 14,12.46 22,3"/><line x1="12" y1="3" x2="12" y2="8" opacity=".3"/></svg><span class="sl">Filtru</span></button>
   <div class="sp"></div>
   <button class="sb" onclick="centerMap()" title="Centru Hartă"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v5M12 18v5M1 12h5M18 12h5"/></svg><span class="sl">Centru</span></button>
-  <!-- CERINȚA 2: Buton Strat Hartă care deschide modalul cu modele de hartă de fundal -->
   <button class="sb" id="blyr" onclick="openLayerMenu()" title="Selectare Hartă de Fundal"><svg viewBox="0 0 24 24"><polygon points="12,2 22,8.5 12,15 2,8.5"/><polyline points="2,15.5 12,22 22,15.5" opacity=".4"/></svg><span class="sl">Strat</span></button>
 </div>
 
@@ -607,6 +606,7 @@ let curF = null, selLy = null;
 let lastB64 = null, lastFname = '', pCnt = 0;
 let mStream = null, gallery = [], currentZoom = 1.0;
 let cachedUAT = '';
+let lastFullDescStr = '';
 const LS = 'rphkml_v1';
 const LS_LYR = 'rphkml_layer_v1';
 
@@ -1731,7 +1731,7 @@ function applyZoomCSS(){
   }, { passive: false });
 })();
 
-// ── CERINȚA 1: ARANJAREA DETALIILOR PE 6 RÂNDURI INDEPENDENTE (FĂRĂ SUPRAPUNERE) ──
+// ── CERINȚA 1 & 2 & 3: ARANJAREA DETALIILOR PE 6 RÂNDURI INDEPENDENTE & ATRIBUT PROPRIU-ZIS & ETICHETE ROMÂNEȘTI ──
 function valOnly(f, key){
   if(!f) return 'PARCELA NECONTROLATA';
   let v = (key && f[key] !== undefined) ? f[key] : f['__nm__'];
@@ -1753,7 +1753,6 @@ function doCapture(){
   ctx.drawImage(vid, 0, 0, w, h);
 
   // ── BANNER INFERIOR CU 6 RÂNDURI INDEPENDENTE SI ALINIATE LA STÂNGA ──
-  // Înălțimea benzii: 23% din poză pentru spațiere aerisită între cele 6 linii
   const bh = Math.max(260, Math.round(h * 0.23));
   ctx.fillStyle = 'rgba(6, 18, 6, 0.88)';
   ctx.fillRect(0, h - bh, w, bh);
@@ -1771,30 +1770,33 @@ function doCapture(){
   // 1) Atributul scris în name_calc / câmpul 1 (FĂRĂ denumirea atributului)
   const line1Txt = curF ? valOnly(curF, selField1) : 'PARCELA NECONTROLATA';
 
-  // 2) Atributul 2 selectat (din selField2 sau al doilea din parcelă)
+  // 2) Atributul 2 selectat (doar ATRIBUTUL PROPRIU-ZIS, fără denumire/etichetă!)
   const line2Txt = (selField2 && curF && curF[selField2] !== undefined)
-    ? (selField2 + ': ' + curF[selField2])
+    ? String(curF[selField2]).trim()
     : (Object.keys(curF || {}).filter(k => !k.startsWith('_') && k !== selField1 && k !== '__nm__').length > 0
       ? (() => {
           const k2 = Object.keys(curF).find(k => !k.startsWith('_') && k !== selField1 && k !== '__nm__');
-          return k2 ? (k2 + ': ' + curF[k2]) : '';
+          return k2 ? String(curF[k2]).trim() : '';
         })()
       : '');
 
   // 3) Coordonate (Latitudine, Longitudine)
   const line3Txt = lat ? (lat.toFixed(6) + '°, ' + lon.toFixed(6) + '°') : 'N/A';
 
-  // 4) Altitudine ; Acuratețe ; Orientare
+  // 4) Altitudine ; Acuratețe ; Orientare (cu denumirile COMPLETE în limba română!)
   const altV = alt != null ? alt.toFixed(0) + 'm' : '—';
   const accV = acc ? '±' + acc.toFixed(1) + 'm' : '—';
   const dirV = hdg != null ? hdg + '° ' + cdir(hdg) : '—';
-  const line4Txt = altV + ' ; ' + accV + ' ; ' + dirV;
+  const line4Txt = 'Altitudine: ' + altV + ' ; Acuratețe: ' + accV + ' ; Orientare: ' + dirV;
 
   // 5) Data si ora fotografierii
   const line5Txt = dateStr;
 
   // 6) Localitatea si adresa unde a fost facuta fotografia
   const line6Txt = cachedUAT || 'BAIA MARE | APIA MARAMUREȘ CONTROL PE TEREN';
+
+  // Salvăm pentru metadatele EXIF tot șirul complet de informații de pe poză!
+  lastFullDescStr = [line1Txt, line2Txt, line3Txt, line4Txt, line5Txt, line6Txt].filter(Boolean).join(' | ');
 
   const leftX = Math.round(w * 0.035);
   const maxW = Math.round(w * 0.93);
@@ -1808,7 +1810,7 @@ function doCapture(){
   // Rând 2 (Y = 32% din bh) -> Auriu deschis #FDE68A
   if(line2Txt){
     ctx.fillStyle = '#FDE68A';
-    ctx.font = 'bold ' + Math.round(bh * 0.12) + 'px monospace';
+    ctx.font = 'bold ' + Math.round(bh * 0.13) + 'px monospace';
     ctx.fillText(line2Txt, leftX, h - bh + Math.round(bh * 0.32), maxW);
   }
 
@@ -1817,7 +1819,7 @@ function doCapture(){
   ctx.font = 'bold ' + Math.round(bh * 0.13) + 'px monospace';
   ctx.fillText(line3Txt, leftX, h - bh + Math.round(bh * 0.48), maxW);
 
-  // Rând 4 (Y = 64% din bh) -> Alt ; Acc ; Dir (Alb #FFFFFF)
+  // Rând 4 (Y = 64% din bh) -> Altitudine ; Acuratețe ; Orientare (Alb #FFFFFF)
   ctx.font = Math.round(bh * 0.12) + 'px monospace';
   ctx.fillText(line4Txt, leftX, h - bh + Math.round(bh * 0.64), maxW);
 
@@ -1854,7 +1856,8 @@ function saveP(){
   const pd = n => String(n).padStart(2, '0');
   const dtExif = now.getFullYear() + ':' + pd(now.getMonth() + 1) + ':' + pd(now.getDate()) + ' ' + pd(now.getHours()) + ':' + pd(now.getMinutes()) + ':' + pd(now.getSeconds());
 
-  const finalB64 = injectEXIFInJPEG(rawB64, lat || 0, lon || 0, alt || 0, hdg || 0, dtExif);
+  // Inserăm în metadatele EXIF absolut toate datele care apar pe poză
+  const finalB64 = injectEXIFInJPEG(rawB64, lat || 0, lon || 0, alt || 0, hdg || 0, dtExif, lastFullDescStr);
 
   if(window.AndroidApp && window.AndroidApp.savePhoto){
     const res = window.AndroidApp.savePhoto(finalB64, lastFname);
@@ -1880,8 +1883,8 @@ function saveP(){
   renderGallery();
 }
 
-// ── INSERARE EXIF GPS METADATA IN JPEG ──
-function injectEXIFInJPEG(base64Raw, lat, lon, alt, hdg, dtStr){
+// ── INSERARE EXIF GPS METADATA & TOATE DATELE FOTO IN JPEG ──
+function injectEXIFInJPEG(base64Raw, lat, lon, alt, hdg, dtStr, fullDescStr){
   try {
     const bin = atob(base64Raw);
     const len = bin.length;
@@ -1890,7 +1893,7 @@ function injectEXIFInJPEG(base64Raw, lat, lon, alt, hdg, dtStr){
 
     if(buf[0] !== 0xFF || buf[1] !== 0xD8) return base64Raw;
 
-    const exifBytes = buildEXIFBytes(dtStr, lat, lon, alt, hdg);
+    const exifBytes = buildEXIFBytes(dtStr, lat, lon, alt, hdg, fullDescStr);
     const app1Len = exifBytes.length + 2;
     const app1Segment = new Uint8Array(exifBytes.length + 4);
     app1Segment[0] = 0xFF;
@@ -1922,7 +1925,7 @@ function injectEXIFInJPEG(base64Raw, lat, lon, alt, hdg, dtStr){
   }
 }
 
-function buildEXIFBytes(dtStr, lat, lon, alt, hdg){
+function buildEXIFBytes(dtStr, lat, lon, alt, hdg, fullDescStr){
   function w2(v){ return [v >> 8 & 0xFF, v & 0xFF]; }
   function w4(v){ return [v >> 24 & 0xFF, v >> 16 & 0xFF, v >> 8 & 0xFF, v & 0xFF]; }
   function rat(n, d){ return [...w4(Math.round(n)), ...w4(Math.round(d))]; }
@@ -1937,66 +1940,98 @@ function buildEXIFBytes(dtStr, lat, lon, alt, hdg){
   }
   function ascii(s){
     const b = [];
-    for(let i = 0; i < s.length; i++) b.push(s.charCodeAt(i) & 0xFF);
+    for(let i = 0; i < s.length; i++) {
+      const c = s.charCodeAt(i);
+      b.push(c < 128 ? c : 63);
+    }
     b.push(0);
+    if(b.length % 2 !== 0) b.push(0);
     return b;
   }
 
-  const IFD0_START = 8;
-  const IFD0_ENTRIES = 4;
-  const IFD0_SIZE = 2 + IFD0_ENTRIES * 12 + 4;
-  const GPS_IFD_OFF = IFD0_START + IFD0_SIZE;
-  const GPS_ENTRIES = 6;
-  const GPS_IFD_SIZE = 2 + GPS_ENTRIES * 12 + 4;
-  const GPS_DATA_OFF = GPS_IFD_OFF + GPS_IFD_SIZE;
-  const DT_OFF = GPS_DATA_OFF + 24 * 3;
-
-  const dt = dtStr || '2026:01:01 00:00:00';
+  const dt = dtStr || '2026:07:30 13:18:25';
   const dtBytes = ascii(dt);
+  const artistBytes = ascii('APIA Maramures - Cristian Farcas');
+  const descBytes = ascii(fullDescStr || 'APIA Maramures Control');
+
+  const commentPrefix = [65, 83, 67, 73, 73, 0, 0, 0];
+  const commentBytes = [...commentPrefix, ...descBytes];
+  if(commentBytes.length % 2 !== 0) commentBytes.push(0);
+
   const absLat = lat ? Math.abs(lat) : 0;
   const absLon = lon ? Math.abs(lon) : 0;
   const absAlt = alt ? Math.abs(alt) : 0;
+  const absHdg = hdg ? Math.abs(hdg) : 0;
   const latRef = (lat && lat >= 0) ? 0x4E000000 : 0x53000000;
   const lonRef = (lon && lon >= 0) ? 0x45000000 : 0x57000000;
+  const altRef = (alt && alt < 0) ? 1 : 0;
 
   const latRat = gpsRat(absLat);
   const lonRat = gpsRat(absLon);
   const altRat = [...rat(Math.round(absAlt * 100), 100)];
+  const hdgRat = [...rat(Math.round(absHdg * 100), 100)];
 
-  const gpsLatOff = GPS_DATA_OFF;
-  const gpsLonOff = GPS_DATA_OFF + 24;
-  const gpsAltOff = GPS_DATA_OFF + 48;
+  const TIFF_START = 0;
+  const IFD0_START = 8;
+  const IFD0_ENTRIES = 5;
+  const IFD0_SIZE = 2 + IFD0_ENTRIES * 12 + 4;
+  const EXIF_IFD_START = IFD0_START + IFD0_SIZE;
+  const EXIF_IFD_ENTRIES = 2;
+  const EXIF_IFD_SIZE = 2 + EXIF_IFD_ENTRIES * 12 + 4;
+  const GPS_IFD_START = EXIF_IFD_START + EXIF_IFD_SIZE;
+  const GPS_ENTRIES = 9;
+  const GPS_IFD_SIZE = 2 + GPS_ENTRIES * 12 + 4;
+  const DATA_START = GPS_IFD_START + GPS_IFD_SIZE;
+
+  const latOff = DATA_START;
+  const lonOff = latOff + latRat.length;
+  const altOff = lonOff + lonRat.length;
+  const hdgOff = altOff + altRat.length;
+  const dtOff = hdgOff + hdgRat.length;
+  const artistOff = dtOff + dtBytes.length;
+  const descOff = artistOff + artistBytes.length;
+  const commentOff = descOff + descBytes.length;
+
+  let ifd0 = [...w2(IFD0_ENTRIES)];
+  ifd0 = [...ifd0, ...ifdEntry(0x010E, 2, descBytes.length, descOff)];
+  ifd0 = [...ifd0, ...ifdEntry(0x0132, 2, dtBytes.length, dtOff)];
+  ifd0 = [...ifd0, ...ifdEntry(0x013B, 2, artistBytes.length, artistOff)];
+  ifd0 = [...ifd0, ...ifdEntry(0x8769, 4, 1, EXIF_IFD_START)];
+  ifd0 = [...ifd0, ...ifdEntry(0x8825, 4, 1, GPS_IFD_START)];
+  ifd0 = [...ifd0, ...w4(0)];
+
+  let exifIFD = [...w2(EXIF_IFD_ENTRIES)];
+  exifIFD = [...exifIFD, ...ifdEntry(0x9003, 2, dtBytes.length, dtOff)];
+  exifIFD = [...exifIFD, ...ifdEntry(0x9286, 7, commentBytes.length, commentOff)];
+  exifIFD = [...exifIFD, ...w4(0)];
 
   let gpsIFD = [...w2(GPS_ENTRIES)];
   gpsIFD = [...gpsIFD, ...ifdEntry(0x0000, 1, 4, 0x02020000)];
   gpsIFD = [...gpsIFD, ...ifdEntry(0x0001, 2, 2, latRef)];
-  gpsIFD = [...gpsIFD, ...ifdEntry(0x0002, 5, 3, gpsLatOff)];
+  gpsIFD = [...gpsIFD, ...ifdEntry(0x0002, 5, 3, latOff)];
   gpsIFD = [...gpsIFD, ...ifdEntry(0x0003, 2, 2, lonRef)];
-  gpsIFD = [...gpsIFD, ...ifdEntry(0x0004, 5, 3, gpsLonOff)];
-  gpsIFD = [...gpsIFD, ...ifdEntry(0x0006, 5, 1, gpsAltOff)];
+  gpsIFD = [...gpsIFD, ...ifdEntry(0x0004, 5, 3, lonOff)];
+  gpsIFD = [...gpsIFD, ...ifdEntry(0x0005, 1, 1, altRef << 24)];
+  gpsIFD = [...gpsIFD, ...ifdEntry(0x0006, 5, 1, altOff)];
+  gpsIFD = [...gpsIFD, ...ifdEntry(0x0010, 2, 2, 0x4D000000)];
+  gpsIFD = [...gpsIFD, ...ifdEntry(0x0011, 5, 1, hdgOff)];
   gpsIFD = [...gpsIFD, ...w4(0)];
-
-  const dtOff = GPS_DATA_OFF + 56;
-  let ifd0 = [...w2(IFD0_ENTRIES)];
-  ifd0 = [...ifd0, ...ifdEntry(0x0132, 2, 20, dtOff)];
-  ifd0 = [...ifd0, ...ifdEntry(0x013B, 2, 24, dtOff + 20)];
-  ifd0 = [...ifd0, ...ifdEntry(0x8825, 4, 1, GPS_IFD_OFF)];
-  ifd0 = [...ifd0, ...ifdEntry(0x9003, 2, 20, dtOff)];
-  ifd0 = [...ifd0, ...w4(0)];
-
-  const artistBytes = ascii('APIA Maramures Control');
 
   const exifHeader = [0x45, 0x78, 0x69, 0x66, 0x00, 0x00];
   const tiff = [
     0x4D, 0x4D, 0x00, 0x2A,
     ...w4(IFD0_START),
     ...ifd0,
+    ...exifIFD,
     ...gpsIFD,
     ...latRat,
     ...lonRat,
     ...altRat,
+    ...hdgRat,
     ...dtBytes,
-    ...artistBytes
+    ...artistBytes,
+    ...descBytes,
+    ...commentBytes
   ];
   return new Uint8Array([...exifHeader, ...tiff]);
 }
