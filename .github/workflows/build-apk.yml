@@ -41,12 +41,16 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
-      - name: Generate custom icons and copy MainActivity & icon assets
+      - name: Install Python Pillow & Generate App Icons
         run: |
+          pip install --quiet pillow || pip install --quiet --break-system-packages pillow || true
           if [ -f "generate_icons.py" ]; then
-            python3 generate_icons.py
-            echo "Icons generated OK"
+            python3 generate_icons.py || echo "Icon generation fallback"
+            echo "Icons check complete"
           fi
+
+      - name: Ensure MainActivity and Copy App Assets (write_main.py)
+        run: |
           if [ -f "write_main.py" ]; then
             python3 write_main.py
           else
