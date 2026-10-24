@@ -23,7 +23,17 @@ jobs:
       - run: npm run sync:android
       - name: Build APK debug
         working-directory: android
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        run: |
+          set +e
+          ./gradlew assembleDebug --no-daemon --stacktrace > "$RUNNER_TEMP/build.log" 2>&1
+          code=$?
+          if [ $code -ne 0 ]; then
+            esc() { sed -e 's/%/%25/g' -e 's/\r//g' | awk '{printf "%s%%0A", $0}'; }
+            echo "::error title=Gradle what went wrong::$(grep -m1 -A25 'What went wrong' "$RUNNER_TEMP/build.log" | esc)"
+            echo "::error title=Gradle errors::$(grep -E 'error:|FAILURE|Could not|not found|Unsupported|cannot find' "$RUNNER_TEMP/build.log" | head -30 | esc)"
+            echo "::error title=Gradle tail::$(tail -40 "$RUNNER_TEMP/build.log" | esc)"
+          fi
+          exit $code
       - uses: actions/upload-artifact@v4
         with:
           name: ROPhotoKml-debug-apk
