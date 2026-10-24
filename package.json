@@ -1,15 +1,27 @@
 {
   "name": "rophotokml",
   "version": "1.0.0",
-  "description": "ROPhotoKml - creat Cristian Farcas (GPS, KML, Geotag Foto, EXIF)",
+  "private": true,
+  "description": "ROPhotoKml - fotografii georeferențiate pentru controlul pe teren (APIA Maramureș)",
   "scripts": {
-    "build": "echo ok"
+    "build:web": "node scripts/build-web.js",
+    "sync": "npm run build:web && cap sync",
+    "sync:android": "npm run build:web && cap sync android",
+    "sync:ios": "npm run build:web && cap sync ios"
   },
   "dependencies": {
-    "@capacitor/android": "6.2.0",
-    "@capacitor/core": "6.2.0"
+    "@capacitor-community/media": "^9.1.0",
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.5.3",
+    "@capacitor/filesystem": "^8.1.5",
+    "@capacitor/ios": "^8.5.3",
+    "leaflet": "1.9.4"
   },
   "devDependencies": {
-    "@capacitor/cli": "6.2.0"
+    "@capacitor/cli": "^8.5.3"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

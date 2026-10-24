@@ -1,16 +1,4 @@
-#!/usr/bin/env python3
-import os, shutil
-
-target_dir = "android/app/src/main/java/ro/rophotokml/app"
-target_file = os.path.join(target_dir, "MainActivity.java")
-
-os.makedirs(target_dir, exist_ok=True)
-
-if os.path.exists("MainActivity.java"):
-    shutil.copy("MainActivity.java", target_file)
-    print("MainActivity.java copiat cu succes din rădăcina proiectului în:", target_file)
-else:
-    java_code = """package ro.rophotokml.app;
+package ro.rophotokml.app;
 
 import android.content.Intent;
 import android.database.Cursor;
@@ -19,7 +7,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.OpenableColumns;
 import android.webkit.JavascriptInterface;
-import android.webkit.WebView;
 import android.content.ContentValues;
 import android.content.ContentResolver;
 import android.provider.MediaStore;
@@ -64,10 +51,10 @@ public class MainActivity extends BridgeActivity {
             if (content == null || fileName == null) return;
             getBridge().getWebView().post(() -> {
                 String escaped = content
-                        .replace("\\\\", "\\\\\\\\")
+                        .replace("\\", "\\\\")
                         .replace("'", "\\'")
-                        .replace("\\r", "")
-                        .replace("\\n", "\\\\n");
+                        .replace("\r", "")
+                        .replace("\n", "\\n");
                 String fnEsc = fileName.replace("'", "\\'");
                 String js = "setTimeout(function(){if(typeof window.openKMLFromIntent==='function'){"
                         + "window.openKMLFromIntent('" + fnEsc + "','" + escaped + "');}},500);";
@@ -98,23 +85,11 @@ public class MainActivity extends BridgeActivity {
             BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
             StringBuilder sb = new StringBuilder();
             String line;
-            while ((line = reader.readLine()) != null) sb.append(line).append("\\n");
+            while ((line = reader.readLine()) != null) sb.append(line).append("\n");
             return sb.toString();
         } catch (Exception e) {
             return null;
         }
-    }
-
-    @Override
-    public void onBackPressed() {
-        getBridge().getWebView().evaluateJavascript(
-                "if(typeof window.onAndroidBack==='function'){window.onAndroidBack();'ok';}else{'no';}",
-                val -> {
-                    if (val == null || !val.contains("ok")) {
-                        runOnUiThread(() -> MainActivity.super.onBackPressed());
-                    }
-                }
-        );
     }
 
     public class NativeBridge {
@@ -162,33 +137,3 @@ public class MainActivity extends BridgeActivity {
         }
     }
 }
-"""
-    with open(target_file, "w", encoding="utf-8") as f:
-        f.write(java_code)
-    print("MainActivity.java generat cu succes în:", target_file)
-
-icon_map = [
-    ('icon-48.png',  'android/app/src/main/res/mipmap-mdpi/ic_launcher.png'),
-    ('icon-72.png',  'android/app/src/main/res/mipmap-hdpi/ic_launcher.png'),
-    ('icon-96.png',  'android/app/src/main/res/mipmap-xhdpi/ic_launcher.png'),
-    ('icon-144.png', 'android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png'),
-    ('icon-192.png', 'android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png'),
-    ('icon-48.png',  'android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png'),
-    ('icon-72.png',  'android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png'),
-    ('icon-96.png',  'android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png'),
-    ('icon-144.png', 'android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png'),
-    ('icon-192.png', 'android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png'),
-    ('icon-48.png',  'android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png'),
-    ('icon-72.png',  'android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png'),
-    ('icon-96.png',  'android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png'),
-    ('icon-144.png', 'android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png'),
-    ('icon-192.png', 'android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png'),
-]
-
-for src_icon, dst in icon_map:
-    if os.path.exists(src_icon):
-        os.makedirs(os.path.dirname(dst), exist_ok=True)
-        shutil.copy(src_icon, dst)
-        print(f"  Icon: {src_icon} -> {dst}")
-    else:
-        print(f"  SKIP (not found): {src_icon}")

@@ -1,0 +1,112 @@
+name: iOS - build semnat + TestFlight / App Store
+
+# Rulează pe macOS (obligatoriu pentru iOS). Pornire manuală sau la tag de versiune.
+on:
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: 'Versiune afișată (ex. 1.0.0). Gol = din tag / package.json'
+        required: false
+      upload:
+        description: 'Încarcă în App Store Connect (TestFlight). Dezactivat = doar .ipa ca artefact'
+        type: boolean
+        default: true
+  push:
+    tags: ['v*']
+
+jobs:
+  release:
+    runs-on: macos-15
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # Apple cere Xcode 26+ / SDK iOS 26 pentru încărcări (din 28.04.2026)
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Verifică Xcode >= 26
+        run: |
+          xcodebuild -version
+          MAJOR=$(xcodebuild -version | head -1 | sed -E 's/Xcode ([0-9]+).*/\1/')
+          [ "$MAJOR" -ge 26 ] || { echo "::error::Xcode $MAJOR < 26 — Apple va respinge încărcarea"; exit 1; }
+
+      - name: Versiune
+        id: ver
+        run: |
+          if [ -n "${{ inputs.version_name }}" ]; then V="${{ inputs.version_name }}";
+          elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then V="${GITHUB_REF#refs/tags/v}";
+          else V=$(node -p "require('./package.json').version"); fi
+          echo "name=$V" >> "$GITHUB_OUTPUT"
+
+      - run: npm ci
+      - run: npm run sync:ios
+
+      - name: Cheia API App Store Connect
+        run: |
+          for s in ASC_KEY_ID ASC_ISSUER_ID APPLE_TEAM_ID; do
+            [ -n "${!s}" ] || { echo "::error::Lipsește secretul $s (vezi store/ios/SETUP.md)"; exit 1; }
+          done
+          mkdir -p "$RUNNER_TEMP/keys"
+          echo "${{ secrets.ASC_KEY_P8_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/keys/AuthKey_${ASC_KEY_ID}.p8"
+
+      - name: Arhivare (archive)
+        run: |
+          xcodebuild archive \
+            -project ios/App/App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey_${ASC_KEY_ID}.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            CODE_SIGN_STYLE=Automatic \
+            MARKETING_VERSION="${{ steps.ver.outputs.name }}" \
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}"
+
+      - name: ExportOptions
+        run: |
+          DEST=$([ "${{ github.event_name }}" = "push" ] || [ "${{ inputs.upload }}" = "true" ] && echo upload || echo export)
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>$DEST</string>
+            <key>teamID</key><string>$APPLE_TEAM_ID</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>uploadSymbols</key><true/>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict></plist>
+          PLIST
+          echo "destination=$DEST"
+
+      - name: Export${{ ' / încărcare în App Store Connect' }}
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey_${ASC_KEY_ID}.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ROPhotoKml-ios
+          path: |
+            ${{ runner.temp }}/export/*.ipa
+            ${{ runner.temp }}/export/*.plist
+          if-no-files-found: ignore
+          retention-days: 30

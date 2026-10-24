@@ -2,27 +2,32 @@
 <html lang="ro">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>ROPhotoKml - creat de Cristian Farcas</title>
 <link rel="icon" type="image/png" href="icon-192.png">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="lib/leaflet.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none}
 :root{
   --g:#22c55e;--glow:rgba(34,197,94,.35);--a:#f59e0b;--r:#ef4444;
   --surf:rgba(8,18,8,.92);--bord:rgba(34,197,94,.22);--txt:#e8f5e8;
   --muted:#4a7a4a;--mono:'Courier New',monospace;
+  --sat:var(--safe-area-inset-top,env(safe-area-inset-top,0px));
+  --sab:var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px));
+  --sal:var(--safe-area-inset-left,env(safe-area-inset-left,0px));
 }
 html,body{height:100%;overflow:hidden;background:#0d1a0d;color:var(--txt);font-family:system-ui,sans-serif}
 #map{position:fixed;inset:0;z-index:0}
 .leaflet-container{background:#1a2d1a!important}
 .leaflet-control-zoom{display:none!important}
 
+#attr{position:fixed;bottom:calc(3px + var(--sab));right:6px;z-index:310;font:7px var(--mono);color:rgba(255,255,255,.6);pointer-events:none;max-width:70%;text-align:right;line-height:1.2}
+
 /* TOP BAR */
 #top{
-  position:fixed;top:0;left:52px;right:0;z-index:300;padding:6px 8px;
+  position:fixed;top:0;left:calc(52px + var(--sal));right:0;z-index:300;padding:calc(6px + var(--sat)) 8px 6px;
   display:flex;align-items:center;gap:6px;pointer-events:none;
   background:linear-gradient(to bottom,rgba(0,0,0,.88) 70%,transparent)
 }
@@ -32,14 +37,14 @@ html,body{height:100%;overflow:hidden;background:#0d1a0d;color:var(--txt);font-f
 #sb::placeholder{color:var(--muted)}
 #filter-sel{background:rgba(0,0,0,.6);border:1px solid var(--bord);color:var(--txt);font-family:var(--mono);font-size:10px;padding:4px 6px;border-radius:8px;outline:none;cursor:pointer;flex-shrink:0}
 #pbg{flex-shrink:0;background:rgba(34,197,94,.12);border:1px solid var(--bord);color:var(--g);font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:20px;white-space:nowrap;display:none}
-#sdrop{position:fixed;top:42px;left:56px;right:8px;z-index:500;background:rgba(8,18,8,.97);border:1px solid var(--bord);border-radius:10px;max-height:180px;overflow-y:auto;display:none}
+#sdrop{position:fixed;top:calc(42px + var(--sat));left:56px;right:8px;z-index:500;background:rgba(8,18,8,.97);border:1px solid var(--bord);border-radius:10px;max-height:180px;overflow-y:auto;display:none}
 .si{padding:8px 12px;font-family:var(--mono);font-size:11px;cursor:pointer;border-bottom:1px solid rgba(34,197,94,.08);color:var(--txt)}
 .si:active{background:rgba(34,197,94,.15);color:var(--g)}
 
 /* SIDEBAR */
 #sidebar{
-  position:fixed;left:0;top:0;bottom:0;width:50px;z-index:300;
-  display:flex;flex-direction:column;align-items:center;padding:6px 0 12px;gap:3px;
+  position:fixed;left:0;top:0;bottom:0;width:calc(50px + var(--sal));z-index:300;
+  display:flex;flex-direction:column;align-items:center;padding:calc(6px + var(--sat)) 0 calc(12px + var(--sab)) var(--sal);gap:3px;
   background:linear-gradient(to right,rgba(0,0,0,.82) 55%,transparent)
 }
 .sb{width:40px;height:40px;border-radius:10px;border:1px solid var(--bord);background:var(--surf);color:var(--txt);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:all .2s;flex-shrink:0}
@@ -53,7 +58,7 @@ html,body{height:100%;overflow:hidden;background:#0d1a0d;color:var(--txt);font-f
 
 /* BOTTOM BAR */
 #bot{
-  position:fixed;bottom:0;left:50px;right:0;z-index:300;padding:6px 10px 18px;pointer-events:none;
+  position:fixed;bottom:0;left:calc(50px + var(--sal));right:0;z-index:300;padding:6px 10px calc(18px + var(--sab));pointer-events:none;
   background:linear-gradient(to top,rgba(0,0,0,.94) 70%,transparent)
 }
 #bot>*{pointer-events:auto}
@@ -86,7 +91,7 @@ html,body{height:100%;overflow:hidden;background:#0d1a0d;color:var(--txt);font-f
 #gbtn svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2}
 #gbtn span{font-size:7px;font-family:var(--mono);color:var(--muted)}
 
-#prox{position:fixed;right:8px;bottom:92px;z-index:250;width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,.6);border:2px solid #444;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:8px;color:#666;text-align:center;line-height:1.3;transition:all .4s;pointer-events:none;white-space:pre-line}
+#prox{position:fixed;right:8px;bottom:calc(92px + var(--sab));z-index:250;width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,.6);border:2px solid #444;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:8px;color:#666;text-align:center;line-height:1.3;transition:all .4s;pointer-events:none;white-space:pre-line}
 #prox.near{border-color:var(--g);color:var(--g);box-shadow:0 0 14px var(--glow)}
 
 /* PARCEL POPUP — apare la tap pe parcelă */
@@ -233,11 +238,11 @@ html,body{height:100%;overflow:hidden;background:#0d1a0d;color:var(--txt);font-f
   border-top:3px solid #185FA5;pointer-events:none
 }
 #vst .vi{font-size:13px;font-weight:700;color:#FAC775}
-#bcc{position:absolute;top:10px;right:10px;width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.3);color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10}
+#bcc{position:absolute;top:calc(10px + var(--sat));right:10px;width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.3);color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10}
 #zoom-slider-wrap{position:absolute;right:10px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;z-index:10}
 #zoom-val{font-family:var(--mono);font-size:11px;color:#fff;background:rgba(0,0,0,.6);padding:2px 6px;border-radius:8px;min-width:32px;text-align:center}
 #zoom-slider{-webkit-appearance:slider-vertical;appearance:slider-vertical;writing-mode:vertical-lr;direction:rtl;width:28px;height:160px;accent-color:var(--g);cursor:pointer;background:transparent}
-#csr{padding:11px 16px 24px;background:#000;display:flex;justify-content:center}
+#csr{padding:11px 16px calc(24px + var(--sab));background:#000;display:flex;justify-content:center}
 #csb{width:66px;height:66px;border-radius:50%;border:4px solid #fff;background:#185FA5;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 0 22px rgba(24,95,165,.5);transition:transform .1s}
 #csb:active{transform:scale(.91)}
 #csd{width:24px;height:24px;border-radius:50%;background:#fff}
@@ -329,7 +334,7 @@ canvas{display:none}
 #prog p{font-family:var(--mono);font-size:13px;color:var(--g);text-align:center;padding:0 20px}
 .spin{width:40px;height:40px;border:3px solid rgba(34,197,94,.2);border-top-color:var(--g);border-radius:50%;animation:sp .8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
-#tst{position:fixed;top:50px;left:50%;transform:translateX(-50%);z-index:4100;font-family:var(--mono);font-size:11px;padding:6px 14px;border-radius:20px;white-space:nowrap;display:none;pointer-events:none;max-width:90%;text-align:center}
+#tst{position:fixed;top:calc(50px + var(--sat));left:50%;transform:translateX(-50%);z-index:4100;font-family:var(--mono);font-size:11px;padding:6px 14px;border-radius:20px;white-space:nowrap;display:none;pointer-events:none;max-width:90%;text-align:center}
 #tst.ok{background:rgba(21,128,61,.94);border:1px solid var(--g);color:#d1fae5}
 #tst.wn{background:rgba(146,64,14,.94);border:1px solid var(--a);color:#fef3c7}
 #tst.er{background:rgba(153,27,27,.94);border:1px solid var(--r);color:#fee2e2}
@@ -350,6 +355,7 @@ canvas{display:none}
   <span id="pbg" style="display:none">0 foto</span>
 </div>
 <div id="sdrop"></div>
+<div id="attr"></div>
 
 <!-- SIDEBAR -->
 <div id="sidebar">
@@ -577,7 +583,7 @@ canvas{display:none}
 <div id="prog"><div class="spin"></div><p id="prog-txt">Se proceseaza...</p></div>
 <div id="tst"></div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="lib/leaflet.js"></script>
 <script>
 'use strict';
 
@@ -596,6 +602,19 @@ window.onerror = function(msg, src, line, col, err) {
 
 // ── STATE ──
 const IS_NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+const PLATFORM = (window.Capacitor && window.Capacitor.getPlatform) ? window.Capacitor.getPlatform() : 'web';
+const IS_IOS = PLATFORM === 'ios';
+const CAP = (name) => (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins[name]) || null;
+// Hărțile Google (tile-uri directe mt1.google.com) NU sunt permise de termenii Google Maps Platform.
+// Lasă false pentru versiunile din magazine; true doar pentru uz intern/sideload.
+const ENABLE_GOOGLE_TILES = false;
+// Coadă "aplicație pregătită": fișierele KML primite la pornire așteaptă încărcarea stării salvate
+window.__appReady = false;
+const _rdyQ = [];
+function markReady(){
+  window.__appReady = true;
+  while(_rdyQ.length){ try{ _rdyQ.shift()(); }catch(e){ console.warn(e); } }
+}
 let map, uMk, aCir;
 let polyL = [], feats = [], kmlName = '';
 let kmlStore = [], activeKmlId = null;
@@ -611,15 +630,19 @@ const LS = 'rphkml_v1';
 const LS_LYR = 'rphkml_layer_v1';
 
 // ── BACK BUTTON HANDLING ──
-(function(){
+// Android 16 (API 36): "predictive back" -> evenimentul vine prin plugin-ul App, nu prin onBackPressed()
+if(IS_NATIVE && CAP('App')){
+  CAP('App').addListener('backButton', function(){ handleBack(); });
+} else if(!IS_IOS){
+  // Fallback pentru browser (PWA)
   history.pushState({r:1}, '', location.href);
   history.pushState({r:1}, '', location.href);
   history.pushState({r:1}, '', location.href);
-})();
-window.addEventListener('popstate', function(){
-  history.pushState({r:1}, '', location.href);
-  handleBack();
-});
+  window.addEventListener('popstate', function(){
+    history.pushState({r:1}, '', location.href);
+    handleBack();
+  });
+}
 window.onAndroidBack = function(){ handleBack(); };
 
 document.addEventListener('deviceready', function(){
@@ -655,6 +678,7 @@ function handleBack(){
 
 // ── EXIT ──
 function showExit(){
+  if(IS_IOS) return; // iOS: aplicațiile nu se închid din cod (Apple HIG)
   document.getElementById('ex-ov').classList.add('on');
   document.getElementById('ex-box').classList.add('on');
 }
@@ -701,6 +725,7 @@ window.addEventListener('load', () => setTimeout(runSplash, 300));
 
 // ── OPEN KML FROM ANDROID INTENT ──
 window.openKMLFromIntent = function(fileName, fileContent) {
+  if(!window.__appReady){ _rdyQ.push(() => window.openKMLFromIntent(fileName, fileContent)); return; }
   try {
     const id = 'k' + Date.now();
     const name = (fileName || 'fisier.kml').replace(/\.kml$/i, '');
@@ -714,6 +739,20 @@ window.openKMLFromIntent = function(fileName, fileContent) {
     toast('Eroare KML: ' + e.message, 'er');
   }
 };
+
+// iOS: "Deschide cu ROPhotoKml" din Fișiere/Mail -> eveniment appUrlOpen
+if(IS_IOS && CAP('App')){
+  CAP('App').addListener('appUrlOpen', async ev => {
+    try {
+      if(!ev || !ev.url) return;
+      const clean = ev.url.split('?')[0];
+      if(!/\.kml$/i.test(clean)) return;
+      const r = await CAP('Filesystem').readFile({ path: ev.url, encoding: 'utf8' });
+      window.openKMLFromIntent(decodeURIComponent(clean.split('/').pop()), r.data);
+    } catch(e) { toast('Eroare deschidere KML: ' + (e && e.message || e), 'er'); }
+  });
+}
+{ const kf = document.getElementById('kf'); if(IS_IOS && kf) kf.removeAttribute('accept'); }
 
 // ── PERSISTENCE ──
 function saveState(){
@@ -761,14 +800,19 @@ function loadState(){
       if(feats.length) fitAll();
     }
   } catch(e) {}
+  markReady();
 }
 
 // ── CERINȚA 2: HĂRȚI DE FUNDAL MULTIPLE (Satelit Hybrid, Drumuri Google/OSM, Esri) ──
 map = L.map('map', { center: [47.65, 23.58], zoom: 13, zoomControl: false, attributionControl: false, tap: true, tapTolerance: 15 });
 
+const ATTR = {
+  ghyb: 'Imagini © Google', grod: 'Hartă © Google',
+  ehyb: 'Imagini © Esri, Maxar, Earthstar Geographics',
+  esat: 'Imagini © Esri, Maxar, Earthstar Geographics',
+  osm: '© contribuitori OpenStreetMap'
+};
 const mapLayers = {
-  ghyb: L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 21, maxNativeZoom: 19 }),
-  grod: L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { maxZoom: 21, maxNativeZoom: 19 }),
   ehyb: L.layerGroup([
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 21, maxNativeZoom: 19 }),
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 21, maxNativeZoom: 19 })
@@ -776,10 +820,18 @@ const mapLayers = {
   esat: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 21, maxNativeZoom: 19 }),
   osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 21, maxNativeZoom: 19 })
 };
+if(ENABLE_GOOGLE_TILES){
+  mapLayers.ghyb = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 21, maxNativeZoom: 19 });
+  mapLayers.grod = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { maxZoom: 21, maxNativeZoom: 19 });
+} else {
+  ['lyr-ghyb','lyr-grod'].forEach(id => { const el = document.getElementById(id); if(el) el.style.display = 'none'; });
+}
+function showAttr(){ const a = document.getElementById('attr'); if(a) a.textContent = ATTR[activeLayerKey] || ''; }
 
-let activeLayerKey = localStorage.getItem(LS_LYR) || 'ghyb';
-if(!mapLayers[activeLayerKey]) activeLayerKey = 'ghyb';
+let activeLayerKey = localStorage.getItem(LS_LYR) || 'ehyb';
+if(!mapLayers[activeLayerKey]) activeLayerKey = 'ehyb';
 mapLayers[activeLayerKey].addTo(map);
+showAttr();
 
 function openLayerMenu(){
   document.querySelectorAll('.lyr-item').forEach(el => {
@@ -807,6 +859,7 @@ function selectLayer(key){
   activeLayerKey = key;
   mapLayers[activeLayerKey].addTo(map);
   localStorage.setItem(LS_LYR, key);
+  showAttr();
   closeLayerMenu();
   const names = {
     ghyb: 'Google Satelit Hybrid',
@@ -1859,7 +1912,11 @@ function saveP(){
   // Inserăm în metadatele EXIF absolut toate datele care apar pe poză
   const finalB64 = injectEXIFInJPEG(rawB64, lat || 0, lon || 0, alt || 0, hdg || 0, dtExif, lastFullDescStr);
 
-  if(window.AndroidApp && window.AndroidApp.savePhoto){
+  if(IS_IOS && CAP('Media')){
+    CAP('Media').savePhoto({ path: 'data:image/jpeg;base64,' + finalB64 })
+      .then(() => toast('✓ Poză salvată în Fotografii', 'ok'))
+      .catch(e => toast('Eroare salvare iOS: ' + ((e && (e.message || e.code)) || e), 'er'));
+  } else if(window.AndroidApp && window.AndroidApp.savePhoto){
     const res = window.AndroidApp.savePhoto(finalB64, lastFname);
     if(res && res.startsWith('OK:')){
       toast('✓ Poză salvată în DCIM/ROPhotoKml', 'ok');

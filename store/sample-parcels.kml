@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+  <name>Exemplu parcele (fictive) - ROPhotoKml</name>
+  <Placemark>
+    <name>RO000000001, 1, a</name>
+    <ExtendedData><SchemaData schemaUrl="#s">
+      <SimpleData name="name_calc">RO000000001, 1, a</SimpleData>
+      <SimpleData name="cultura">Grâu</SimpleData>
+      <SimpleData name="suprafata_ha">1.25</SimpleData>
+    </SchemaData></ExtendedData>
+    <Polygon><outerBoundaryIs><LinearRing><coordinates>
+      23.5800,47.6600,0 23.5815,47.6600,0 23.5815,47.6610,0 23.5800,47.6610,0 23.5800,47.6600,0
+    </coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+  <Placemark>
+    <name>RO000000002, 2, b</name>
+    <ExtendedData><SchemaData schemaUrl="#s">
+      <SimpleData name="name_calc">RO000000002, 2, b</SimpleData>
+      <SimpleData name="cultura">Porumb</SimpleData>
+      <SimpleData name="suprafata_ha">0.80</SimpleData>
+    </SchemaData></ExtendedData>
+    <Polygon><outerBoundaryIs><LinearRing><coordinates>
+      23.5820,47.6600,0 23.5832,47.6602,0 23.5830,47.6612,0 23.5818,47.6610,0 23.5820,47.6600,0
+    </coordinates></LinearRing></outerBoundaryIs></Polygon>
+  </Placemark>
+</Document>
+</kml>

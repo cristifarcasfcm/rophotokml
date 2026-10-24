@@ -2,9 +2,18 @@
   "appId": "ro.rophotokml.app",
   "appName": "ROPhotoKml",
   "webDir": "www",
-  "android": {
-    "allowMixedContent": true,
-    "webContentsDebuggingEnabled": false,
-    "backgroundColor": "#0d1a0d"
-  }
+  "server": {
+    "androidScheme": "https"
+  },
+  "ios": {
+    "contentInset": "never",
+    "allowsLinkPreview": false
+  },
+  "plugins": {
+    "SystemBars": {
+      "style": "DARK",
+      "insetsHandling": "css"
+    }
+  },
+  "backgroundColor": "#0d1a0d"
 }

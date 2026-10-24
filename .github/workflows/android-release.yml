@@ -1,0 +1,82 @@
+name: Android - AAB semnat pentru Google Play
+
+# Pornire manuală (Actions -> Run workflow) sau la tag de versiune: git tag v1.0.0 && git push --tags
+on:
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: 'Versiune afișată (ex. 1.0.0). Gol = din tag / package.json'
+        required: false
+      upload_to_play:
+        description: 'Încarcă automat în Google Play (track intern)'
+        type: boolean
+        default: false
+  push:
+    tags: ['v*']
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Versiune
+        id: ver
+        run: |
+          if [ -n "${{ inputs.version_name }}" ]; then V="${{ inputs.version_name }}";
+          elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then V="${GITHUB_REF#refs/tags/v}";
+          else V=$(node -p "require('./package.json').version"); fi
+          echo "name=$V" >> "$GITHUB_OUTPUT"
+          echo "versionName=$V  versionCode=${{ github.run_number }}"
+
+      - run: npm ci
+      - run: npm run sync:android
+
+      - name: Cheie de semnare (din GitHub Secrets)
+        run: |
+          [ -n "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ] || { echo "::error::Lipsește secretul ANDROID_KEYSTORE_BASE64 (vezi store/android/SETUP.md)"; exit 1; }
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/upload.keystore"
+
+      - name: Build AAB release
+        working-directory: android
+        env:
+          VERSION_CODE: ${{ github.run_number }}
+          VERSION_NAME: ${{ steps.ver.outputs.name }}
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/upload.keystore
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew bundleRelease --no-daemon --stacktrace
+
+      - name: Verifică semnătura și ținta API
+        run: |
+          AAB=android/app/build/outputs/bundle/release/app-release.aab
+          test -f "$AAB"
+          jarsigner -verify "$AAB" | head -3
+          unzip -p "$AAB" base/manifest/AndroidManifest.xml | strings | grep -q "ro.rophotokml.app" && echo "pachet OK"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ROPhotoKml-release-aab
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 90
+
+      - name: Încarcă în Google Play (track intern)
+        if: ${{ inputs.upload_to_play == true }}
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: ro.rophotokml.app
+          releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
+          track: internal
+          status: draft
