@@ -34,6 +34,24 @@ jobs:
             echo "::error title=Gradle tail::$(tail -40 "$RUNNER_TEMP/build.log" | esc)"
           fi
           exit $code
+      - name: Verifică APK (țintă API, permisiuni)
+        run: |
+          AAPT=$(ls "$ANDROID_HOME"/build-tools/*/aapt2 | sort -V | tail -1)
+          OUT=$("$AAPT" dump badging android/app/build/outputs/apk/debug/app-debug.apk | grep -E "^package|sdkVersion|targetSdkVersion|uses-permission|launchable|application-label:" | sed -e 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+          echo "::notice title=APK badging::$OUT"
+      - name: Build AAB release (nesemnat, doar verificare)
+        working-directory: android
+        run: |
+          set +e
+          ./gradlew bundleRelease --no-daemon --stacktrace > "$RUNNER_TEMP/aab.log" 2>&1
+          code=$?
+          if [ $code -ne 0 ]; then
+            esc() { sed -e 's/%/%25/g' -e 's/\r//g' | awk '{printf "%s%%0A", $0}'; }
+            echo "::error title=AAB what went wrong::$(grep -m1 -A25 'What went wrong' "$RUNNER_TEMP/aab.log" | esc)"
+            echo "::error title=AAB tail::$(tail -30 "$RUNNER_TEMP/aab.log" | esc)"
+          fi
+          ls -la app/build/outputs/bundle/release/ || true
+          exit $code
       - uses: actions/upload-artifact@v4
         with:
           name: ROPhotoKml-debug-apk
